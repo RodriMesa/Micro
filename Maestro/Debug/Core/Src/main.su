@@ -1,6 +1,6 @@
 main.c:74:5:main	520	static
-main.c:246:6:SystemClock_Config	88	static
-main.c:282:6:SPI_Transmit_1	16	static
-main.c:290:6:Mi_Timer	4	static
-main.c:295:6:HAL_GPIO_EXTI_Callback	24	static
-main.c:315:6:Error_Handler	4	static
+main.c:250:6:SystemClock_Config	88	static
+main.c:289:6:SPI_Transmit_1	16	static
+main.c:297:6:Mi_Timer	4	static
+main.c:302:6:HAL_GPIO_EXTI_Callback	24	static
+main.c:322:6:Error_Handler	4	static

@@ -191,7 +191,7 @@ int main(void)
 						string[0] = 'I';
 						string[1] = '_';
 						for (k = i; k < (5 + i); k++) {
-							snprintf(s, 7, "%lf", instrucciones[k]);
+							snprintf(s, 7, "%lf", instrucciones[k+1]);
 							for (l = 0; l < 6; l++) {
 								string[l + k * 7 + 2] = s[l];
 							}
