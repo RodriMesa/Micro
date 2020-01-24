@@ -65,6 +65,7 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 /* USER CODE END 0 */
+
 /**
   * @brief  The application entry point.
   * @retval int
@@ -76,7 +77,7 @@ int main(void)
 	double instrucciones[50];
 	//Flags
 	int flag_activacion = 0;
-	int flag_homing = 0;
+	int flag_homing = 0,flag_cambio=0;
 	//Variables enum
 	enum Estado estado = Desactivado;
 	//HAL_StatusTypeDef SPI_estado;
@@ -107,6 +108,9 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	SPI_Transmit_1(1);
   /* USER CODE END 2 */
+ 
+ 
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
@@ -133,6 +137,7 @@ int main(void)
 							estado = Desactivado;
 							flag_activacion = 0;
 							flag_homing = 0;
+							flag_cambio=1;
 
 						} else {
 							i--;
@@ -149,6 +154,7 @@ int main(void)
 						if (pRxData == 'A') {
 							estado = Activado;
 							flag_activacion = 1;
+							flag_cambio=1;
 						} else {
 							i--;
 						}
@@ -167,6 +173,7 @@ int main(void)
 						if (pRxData == 'H') {
 							estado = Modo_Homing;
 							flag_homing = 1;
+							flag_cambio=1;
 						} else {
 							i--;
 						}
@@ -197,6 +204,7 @@ int main(void)
 						//Verificar que se logre
 						if (pRxData == 'N') {
 							estado = Modo_Normal;
+							flag_cambio=1;
 						} else {
 							i--;
 						}
@@ -216,14 +224,60 @@ int main(void)
 		}
 		switch (estado) {
 		case Activado:
+			if(flag_cambio){
+				//Prender LED
+				HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_SET);
+				flag_cambio=0;
+			}
 			break;
 		case Desactivado:
+			if(flag_cambio){
+				//Prender LED
+				HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_SET);
+				flag_cambio=0;
+			}
 			break;
 		case Modo_Homing:
+			if(flag_cambio){
+				//Prender LED
+				HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_SET);
+				flag_cambio=0;
+			}
 			break;
 		case Modo_Normal:
+			if(flag_cambio){
+				//Prender LED
+				HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_RESET);
+				HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_SET);
+				flag_cambio=0;
+			}
 			break;
 		case Error:
+			HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_SET);
 			break;
 		}
     /* USER CODE END WHILE */
@@ -276,7 +330,11 @@ void SystemClock_Config(void)
 }
 
 /* USER CODE BEGIN 4 */
-void SPI_Transmit_1(uint8_t pTxData) {
+/*Va a haber dos funciones slave transmit, una para cada esclavo, va a ser una sola interrupcion externa por placa
+La gestion de cada motor lo hace cada esclavo. En el struct tenemos que tener: Posicion actual, posicion deseada, dirección
+deseada, etc.*/
+void SPI_Transmit_1(uint8_t pTxData) { //Solo va a haber una sola función slave transmit, que transmite a
+
 	//static HAL_StatusTypeDef SPI_estado;
 	//while (flag_CB);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
@@ -284,21 +342,27 @@ void SPI_Transmit_1(uint8_t pTxData) {
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
 	//while (SPI_estado != HAL_OK);
 }
-void Mi_Timer() {
-	while (flag_INT)
-		;
+void Mi_Timer() { //Esta funcion la tenemos que hacer contemplando el modo de trabajo.
+	long contador=0;
+	while (flag_INT){
+		contador++;
+		if (contador==1000000){
+			pRxData='K';
+			break;
+		}
+	}
 	flag_INT = 1;
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	static uint8_t D_transmision = ':';
 	flag_INT = 0;
 	switch (GPIO_Pin) {
-	case GPIO_PIN_8: 	//INT 1
+	case GPIO_PIN_8: 	//INT 1 Esclavo 1 (2 motores)
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 		HAL_SPI_TransmitReceive(&hspi2, &D_transmision, &pRxData, 1, 1);
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
 		break;
-	case GPIO_PIN_9: 	//INT2
+	case GPIO_PIN_9: 	//INT2 Esclavo 2
 		break;
 	}
 

@@ -70,6 +70,16 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 #define Int_2_EXTI_IRQn EXTI9_5_IRQn
 #define Slave_2_Pin GPIO_PIN_11
 #define Slave_2_GPIO_Port GPIOC
+#define Led_Normal_Pin GPIO_PIN_3
+#define Led_Normal_GPIO_Port GPIOD
+#define Led_Homing_Pin GPIO_PIN_4
+#define Led_Homing_GPIO_Port GPIOD
+#define Led_Desactivado_Pin GPIO_PIN_5
+#define Led_Desactivado_GPIO_Port GPIOD
+#define Led_Activado_Pin GPIO_PIN_6
+#define Led_Activado_GPIO_Port GPIOD
+#define Led_Error_Pin GPIO_PIN_7
+#define Led_Error_GPIO_Port GPIOD
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */
