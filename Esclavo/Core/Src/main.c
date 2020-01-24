@@ -48,7 +48,7 @@
 
 /* USER CODE BEGIN PV */
 uint8_t dato_recepcion_SPI, pTxData = 0;
-volatile int cont_datos_SPI = 0, flag_mensaje_completo = 0;
+volatile int cont_datos_SPI = 0, flag_mensaje_completo = 0, contador_instrucciones=0;
 char str[50] = { 0 };
 /* USER CODE END PV */
 
@@ -114,9 +114,10 @@ int main(void)
   /* USER CODE BEGIN WHILE */
 	while (1) {
 		//Generar comando
-		if (str[cont_datos_SPI - 1] == ':' && flag_mensaje_completo == 0) {
-			cant = identificador(str, instrucciones, cont_datos_SPI);
+		if (flag_mensaje_completo == 0) {
+			cant = identificador(str, instrucciones, contador_instrucciones);
 			flag_mensaje_completo = 1;
+			contador_instrucciones=0;
 		}
 		// identificar comandos
 		if (flag_mensaje_completo == 1) {
@@ -267,6 +268,7 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 	str[cont_datos_SPI - 1] = dato_recepcion_SPI;
 	if (str[cont_datos_SPI - 1] == ':') {
 		flag_mensaje_completo = 0;
+		contador_instrucciones=cont_datos_SPI;
 		cont_datos_SPI = 0;
 	}
 	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
