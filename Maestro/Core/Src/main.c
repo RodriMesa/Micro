@@ -47,10 +47,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern char dato_recepcion_USB;
-extern int cont_datos_USB;
-extern int flag_recepcion_USB;
-volatile int flag_mensaje_completo = 0;
+extern int contador_instrucciones;
+extern char str[50];
+extern int flag_mensaje_completo;
 volatile int flag_INT = 1;
 uint8_t pRxData = 'K';
 enum Estado {
@@ -66,7 +65,6 @@ void SystemClock_Config(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 /* USER CODE END 0 */
-
 /**
   * @brief  The application entry point.
   * @retval int
@@ -75,7 +73,6 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	int cant = 0;
-	char str[50];
 	double instrucciones[50];
 	//Flags
 	int flag_activacion = 0;
@@ -110,23 +107,15 @@ int main(void)
   /* USER CODE BEGIN 2 */
 	SPI_Transmit_1(1);
   /* USER CODE END 2 */
- 
- 
-
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
 		//Generar string
-		if (flag_recepcion_USB) {
-			str[cont_datos_USB - 1] = dato_recepcion_USB;
-			flag_recepcion_USB = 0;
-			flag_mensaje_completo = 0;
-		}
 		//Generar comandos
-		if (str[cont_datos_USB - 1] == ':' && flag_mensaje_completo == 0) {
-			cant = identificador(str, instrucciones, cont_datos_USB);
+		if (flag_mensaje_completo == 0) {
+			cant = identificador(str, instrucciones, contador_instrucciones);
 			flag_mensaje_completo = 1;
-			cont_datos_USB = 0;
+			contador_instrucciones=0;
 		}
 		//Identificar comandos
 		if (flag_mensaje_completo == 1) {
