@@ -85,7 +85,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 					tmp[m] = 0;
 				}
 			}
-			if (cont1 == 3) {
+			if (cont1 == 5) {
 				instrucciones[j] = Modo_ir;
 				j++;
 				for (l = 0; l < cont1; l++) {

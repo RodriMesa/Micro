@@ -48,7 +48,7 @@
 
 /* USER CODE BEGIN PV */
 uint8_t dato_recepcion_SPI, pTxData = 0;
-volatile int cont_datos_SPI = 0, flag_mensaje_completo = 0, contador_instrucciones=0;
+volatile int cont_datos_SPI = 0, flag_mensaje_completo = 3, contador_instrucciones=0;
 char str[50] = { 0 };
 /* USER CODE END PV */
 
@@ -160,6 +160,7 @@ int main(void)
 						//calcula el duty cycle segun la vel
 						//calcula la cantidad de pulsos del enconder para llegar a esta pos
 						estado = Modo_Normal;
+						i+=5;
 					}
 					break;
 				case error:
@@ -196,9 +197,12 @@ int main(void)
 					//Revisa el estado, interuumpe y guarada el estado en el puerto SP
 					break;
 				}
-				flag_mensaje_completo = 2;
+
 			}
+			flag_mensaje_completo = 2;
+			cant=0;
 		}
+
 		switch (estado) {
 		case Desactivado:
 			break;
