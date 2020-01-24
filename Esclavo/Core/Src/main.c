@@ -47,11 +47,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t dato_recepcion_USB, pTxData = 0;
-volatile int cont = 0, flag = 0, flag1 = 0, flag2 = 0;
-volatile long contador1=0,contador2=0;
+uint8_t dato_recepcion_SPI, pTxData = 0;
+volatile int cont_datos_SPI = 0, flag_mensaje_completo = 0;
 char str[50] = { 0 };
-/* USER CODE END PV */
+
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
@@ -72,7 +71,6 @@ int main(void)
   /* USER CODE BEGIN 1 */
 	// Declarar variables
 	int cant = 0, flag_activacion, flag_homing;
-	//char str[50] = { 0 };
 	double instrucciones[50] = { };
 	enum Estado {
 		Activado, Desactivado, Modo_Homing, Modo_Normal, Error
@@ -109,7 +107,7 @@ int main(void)
   MX_TIM12_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-  HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_USB, 1);
+  HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -123,13 +121,13 @@ int main(void)
 			//HAL_SPI_Receive_IT(&hspi2, &dato, 1);
 	//	}
 		//Generar comando
-		if (str[cont - 1] == ':' && flag1 == 0) {
+		if (str[cont_datos_SPI - 1] == ':' && flag_mensaje_completo == 0) {
 			//cant = identificador(str, instrucciones, cont);
 			//flag1 = 1;
 		}
 		// identificar comandos
 
-		if (flag1 == 1) {
+		if (flag_mensaje_completo == 1) {
 			for (int i = 0; i < cant; i++) {
 				comando = (int) instrucciones[i];
 				//fprintf(&uart_io,"%d",comando);
@@ -206,13 +204,13 @@ int main(void)
 					HAL_GPIO_WritePin(GPIOC, out1_Pin, GPIO_PIN_SET);
 					HAL_GPIO_WritePin(GPIOC, out1_Pin, GPIO_PIN_RESET);
 					__HAL_SPI_CLEAR_OVRFLAG(&hspi2);
-					HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_USB,1);
+					HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI,1);
 					break;
 				case Estados:
 					//Revisa el estado, interuumpe y guarada el estado en el puerto SP
 					break;
 				}
-				flag1 = 2;
+				flag_mensaje_completo = 2;
 			}
 		}
 		switch (estado) {
@@ -280,23 +278,13 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
-	cont++;
-	//flag = 1;
-	if (dato_recepcion_USB==':')
-	{
-		contador1++;
+	cont_datos_SPI++;
+	str[cont_datos_SPI - 1] = dato_recepcion_SPI;
+	if(str[cont_datos_SPI - 1]==':'){
+		flag_mensaje_completo = 0;
+		cont_datos_SPI=0;
 	}
-	if(dato_recepcion_USB=='A')
-	{
-		contador2++;
-	}
-	str[cont - 1] = dato_recepcion_USB;
-	if(str[cont - 1]==':'){
-		flag1 = 0;
-		cont=0;
-	}
-	//flag = 0;
-	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_USB, 1);
+	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
 
 }
 /* USER CODE END 4 */
