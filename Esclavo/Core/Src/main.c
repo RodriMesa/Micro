@@ -159,6 +159,7 @@ int main(void)
 						// saca vel media con consigna, la pos actual y tiempo
 						//calcula el duty cycle segun la vel
 						//calcula la cantidad de pulsos del enconder para llegar a esta pos
+						//aca se hace la interpolacion
 						estado = Modo_Normal;
 						i+=5;
 					}
@@ -204,15 +205,40 @@ int main(void)
 		}
 
 		switch (estado) {
+		//en la maquina de estado hace la gestion de cada motor los cuales sus datos estan guardados en un struk
 		case Desactivado:
+			//bajar pines de dir motores
+			//desactivar pwm
+			//resetear todos los vectores de motores
+			//tener que volver a activar y hacer homming
+			//apagar timer
+			//bajar tension en todos lados lo primero
 			break;
 		case Activado:
+			//energisar l298
+			//
+			//
+			//
+			//
 			break;
 		case Modo_Homing:
+			//caragar pwm modo homming
+			//sensar el final de carrera
+			//cambiar la dirreccion
+			//cambiar el pwm a algo muy lento
+			//mover muy lento
+			//colocar el contador del encoder 0
 			break;
 		case Modo_Normal:
+			//avisar que estoy listo
+			//activar los pwm con el
+			//control de pocicion y lectura de encoder
+			//manifulacion del efector final
 			break;
 		case Error:
+			// desactivar l298
+			//entra en modo error
+			//solo podria salir con un reseteo manuaal
 			break;
 		}
 

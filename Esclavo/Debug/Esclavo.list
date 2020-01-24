@@ -27,23 +27,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000030  00000000  00000000  000201e0  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0000da1f  00000000  00000000  00020210  2**0
+ 12 .debug_info   0000da24  00000000  00000000  00020210  2**0
                   CONTENTS, READONLY, DEBUGGING
- 13 .debug_abbrev 0000203e  00000000  00000000  0002dc2f  2**0
+ 13 .debug_abbrev 00002033  00000000  00000000  0002dc34  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_aranges 00000c50  00000000  00000000  0002fc70  2**3
+ 14 .debug_aranges 00000c50  00000000  00000000  0002fc68  2**3
                   CONTENTS, READONLY, DEBUGGING
- 15 .debug_ranges 00000b38  00000000  00000000  000308c0  2**3
+ 15 .debug_ranges 00000b38  00000000  00000000  000308b8  2**3
                   CONTENTS, READONLY, DEBUGGING
- 16 .debug_macro  00021744  00000000  00000000  000313f8  2**0
+ 16 .debug_macro  00021744  00000000  00000000  000313f0  2**0
                   CONTENTS, READONLY, DEBUGGING
- 17 .debug_line   0000a3a5  00000000  00000000  00052b3c  2**0
+ 17 .debug_line   0000a3a5  00000000  00000000  00052b34  2**0
                   CONTENTS, READONLY, DEBUGGING
- 18 .debug_str    000c93f5  00000000  00000000  0005cee1  2**0
+ 18 .debug_str    000c93f5  00000000  00000000  0005ced9  2**0
                   CONTENTS, READONLY, DEBUGGING
- 19 .comment      0000007b  00000000  00000000  001262d6  2**0
+ 19 .comment      0000007b  00000000  00000000  001262ce  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00003b48  00000000  00000000  00126354  2**2
+ 20 .debug_frame  00003b48  00000000  00000000  0012634c  2**2
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -1609,9 +1609,9 @@ int identificador(char *str, double *instrucciones, int cont) {
  800124e:	f6ff af7f 	blt.w	8001150 <identificador+0x33c>
 				}
 			}
-			if (cont1 == 5) {
+			if (cont1 == 3) {
  8001252:	f8d7 30fc 	ldr.w	r3, [r7, #252]	; 0xfc
- 8001256:	2b05      	cmp	r3, #5
+ 8001256:	2b03      	cmp	r3, #3
  8001258:	d136      	bne.n	80012c8 <identificador+0x4b4>
 				instrucciones[j] = Modo_ir;
  800125a:	f8d7 3108 	ldr.w	r3, [r7, #264]	; 0x108
@@ -2011,6 +2011,7 @@ int main(void)
 						// saca vel media con consigna, la pos actual y tiempo
 						//calcula el duty cycle segun la vel
 						//calcula la cantidad de pulsos del enconder para llegar a esta pos
+						//aca se hace la interpolacion
 						estado = Modo_Normal;
  8001516:	2303      	movs	r3, #3
  8001518:	f887 31a3 	strb.w	r3, [r7, #419]	; 0x1a3
