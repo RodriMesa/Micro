@@ -34,7 +34,8 @@
 /* Private variables ---------------------------------------------------------*/
 	volatile char dato_recepcion_USB; 	// Para pasar el char
 	volatile int cont_datos_USB=0;		// Para tener en cuenta el tamaño de mensaje
-	volatile int flag_recepcion_USB=0;				// Para habilitar la escritura del mensaje
+	char str[50];
+	int flag_mensaje_completo = 3,contador_instrucciones=0;
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY
@@ -283,7 +284,12 @@ static int8_t CDC_Receive_FS(uint8_t* Buf, uint32_t *Len)
   USBD_CDC_ReceivePacket(&hUsbDeviceFS);
   dato_recepcion_USB=*Buf;
   cont_datos_USB++;
-  flag_recepcion_USB=1;
+  str[cont_datos_USB - 1] = dato_recepcion_USB;
+  if(str[cont_datos_USB - 1]==':'){
+	  flag_mensaje_completo = 0;
+	  contador_instrucciones=cont_datos_USB;
+	  cont_datos_USB=0;
+  }
   return (USBD_OK);
   /* USER CODE END 6 */
 }
