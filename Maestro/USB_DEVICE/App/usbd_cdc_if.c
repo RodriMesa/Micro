@@ -35,7 +35,7 @@
 	volatile char dato_recepcion_USB; 	// Para pasar el char
 	volatile int cont_datos_USB=0;		// Para tener en cuenta el tamaño de mensaje
 	char str[50];
-	int flag_mensaje_completo = 0,contador_instrucciones=0;
+	int flag_mensaje_completo = 3,contador_instrucciones=0;
 /* USER CODE END PV */
 
 /** @addtogroup STM32_USB_OTG_DEVICE_LIBRARY

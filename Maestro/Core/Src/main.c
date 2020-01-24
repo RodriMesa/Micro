@@ -212,6 +212,7 @@ int main(void)
 				pRxData = 'K';
 			}
 			flag_mensaje_completo = 2;
+			cant=0;
 		}
 		switch (estado) {
 		case Activado:
@@ -289,7 +290,7 @@ void Mi_Timer() {
 	flag_INT = 1;
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	static uint8_t D_transmision = 'n';
+	static uint8_t D_transmision = ':';
 	flag_INT = 0;
 	switch (GPIO_Pin) {
 	case GPIO_PIN_8: 	//INT 1
