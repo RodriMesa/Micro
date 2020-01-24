@@ -47,7 +47,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-
+uint8_t dato_recepcion_SPI, pTxData = 0;
+volatile int cont_datos_SPI = 0, flag_mensaje_completo = 0;
+char str[50] = { 0 };
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -113,7 +115,7 @@ int main(void)
 	while (1) {
 		//Generar comando
 		if (str[cont_datos_SPI - 1] == ':' && flag_mensaje_completo == 0) {
-			cant = identificador(str, instrucciones, cont);
+			cant = identificador(str, instrucciones, cont_datos_SPI);
 			flag_mensaje_completo = 1;
 		}
 		// identificar comandos
