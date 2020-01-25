@@ -32,7 +32,7 @@ extern "C" {
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-
+#include <math.h>
 /* USER CODE END Includes */
 
 /* Exported types ------------------------------------------------------------*/
@@ -67,7 +67,6 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi);
 #define dir1_Pin GPIO_PIN_1
 #define dir1_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
-
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus

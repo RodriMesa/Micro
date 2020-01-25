@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "IDENTIFICADOR.h"
+#include "Interpolador.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -50,6 +51,19 @@
 uint8_t dato_recepcion_SPI, pTxData = 0;
 volatile int cont_datos_SPI = 0, flag_mensaje_completo = 3, contador_instrucciones=0;
 char str[50] = { 0 };
+enum Estado {
+		Activado, Desactivado, Modo_Homing, Modo_Normal, Error
+	};
+struct Motor{
+	float pos_objetivo[15000];
+	float pos_actual;
+	float pos_final;
+	float pos_inicial;
+	float vel_actual;
+	enum Estado estado_actual;
+	long cantidad_puntos;
+	float vel_objetivo;
+}motor;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -72,9 +86,6 @@ int main(void)
 	// Declarar variables
 	int cant = 0, flag_activacion, flag_homing;
 	double instrucciones[50] = { };
-	enum Estado {
-		Activado, Desactivado, Modo_Homing, Modo_Normal, Error
-	};
 	// init variables
 	enum Estado estado = Desactivado;
 	int comando;
@@ -159,9 +170,10 @@ int main(void)
 						// saca vel media con consigna, la pos actual y tiempo
 						//calcula el duty cycle segun la vel
 						//calcula la cantidad de pulsos del enconder para llegar a esta pos
+
 						//aca se hace la interpolacion
 						estado = Modo_Normal;
-						i+=5;
+						i+=3;
 					}
 					break;
 				case error:
@@ -302,8 +314,11 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 		cont_datos_SPI = 0;
 	}
 	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
-
 }
+
+
+
+
 /* USER CODE END 4 */
 
 /**
