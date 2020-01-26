@@ -64,7 +64,8 @@ typedef struct {
 motor motor1, motor2;
 uint8_t dato_recepcion_SPI, pTxData = 0, cont_samp = 0;
 volatile int cont_datos_SPI = 0, flag_mensaje_completo = 3,
-		contador_instrucciones = 0, flag_configuracion_PWM = 1, flag_cambio = 0,dir;
+		contador_instrucciones = 0, flag_configuracion_PWM = 1, flag_cambio = 0,
+		dir;
 char str[50] = { 0 };
 float valor_PWM;
 TIM_OC_InitTypeDef PWM_config = { 0 };
@@ -81,12 +82,11 @@ void SystemClock_Config(void);
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
+	/* USER CODE BEGIN 1 */
 	// Declarar variables
 	int cant = 0, flag_activacion, flag_homing;
 	double instrucciones[50] = { };
@@ -95,38 +95,37 @@ int main(void)
 	int comando;
 	flag_activacion = 0;
 	flag_homing = 0;
-  /* USER CODE END 1 */
-  
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_TIM1_Init();
-  MX_TIM3_Init();
-  MX_TIM9_Init();
-  MX_TIM12_Init();
-  MX_SPI2_Init();
-  /* USER CODE BEGIN 2 */
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_TIM1_Init();
+	MX_TIM3_Init();
+	MX_TIM9_Init();
+	MX_TIM12_Init();
+	MX_SPI2_Init();
+	/* USER CODE BEGIN 2 */
 	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
-  /* USER CODE END 2 */
+	/* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
 	while (1) {
 		//Generar comando
 		if (flag_mensaje_completo == 0) {
@@ -145,6 +144,7 @@ int main(void)
 						//Comunica que desactivo Interrumpe
 						estado = Desactivado;
 						flag_activacion = 0;
+						flag_cambio = 1;
 					} else {
 					}
 					break;
@@ -158,6 +158,7 @@ int main(void)
 						//seteamos pwms
 						estado = Activado;
 						flag_activacion = 1;
+						flag_cambio = 1;
 					} else {
 					}
 					break;
@@ -166,6 +167,7 @@ int main(void)
 						//Realizar homming:configurar PWM a vel baja:
 						//simular un fin de carrera con un pull y una interrupcion
 						flag_homing = 1;
+						flag_cambio = 1;
 						estado = Modo_Homing;
 					}
 					break;
@@ -234,7 +236,10 @@ int main(void)
 			break;
 		case Activado:
 			//energisar l298
-			//
+			if (flag_cambio==1){
+				flag_cambio=0;
+				HAL_GPIO_WritePin(L298_ON_GPIO_Port, L298_ON_Pin, GPIO_PIN_RESET);
+			}
 			//
 			//
 			//
@@ -253,17 +258,20 @@ int main(void)
 			//control de pocicion y lectura de encoder
 			//manifulacion del efector final
 			if (flag_cambio == 1) {
-				flag_cambio=0;
-				dir=interpolador_vel(instrucciones[2], instrucciones[3], instrucciones[5],motor1.pos_objetivo);
+				flag_cambio = 0;
+				dir = interpolador_vel(instrucciones[2], instrucciones[3],
+						instrucciones[5], motor1.pos_objetivo);
 				//aca hay que esperar a que todos los esclavos esten listos
 				HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
 				HAL_TIM_Base_Start_IT(&htim9);
-				if (dir>0){
-
-				}else{
-
+				if (dir > 0) {
+					PWM_config.Pulse = 2799;
+					TIM_OC2_SetConfig(TIM12, &PWM_config);
+					TIM12->CCR1 = TIM12->CCR2;
+					HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_SET);
+				} else {
+					HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
 				}
-
 
 			}
 			break;
@@ -274,54 +282,51 @@ int main(void)
 			break;
 		}
 
-    /* USER CODE END WHILE */
+		/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+		/* USER CODE BEGIN 3 */
 	}
-  /* USER CODE END 3 */
+	/* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config(void) {
+	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
 
-  /** Configure the main internal regulator output voltage 
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Initializes the CPU, AHB and APB busses clocks 
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-  RCC_OscInitStruct.PLL.PLLM = 8;
-  RCC_OscInitStruct.PLL.PLLN = 168;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 7;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Initializes the CPU, AHB and APB busses clocks 
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
+	/** Configure the main internal regulator output voltage
+	 */
+	__HAL_RCC_PWR_CLK_ENABLE();
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+	/** Initializes the CPU, AHB and APB busses clocks
+	 */
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+	RCC_OscInitStruct.PLL.PLLM = 8;
+	RCC_OscInitStruct.PLL.PLLN = 168;
+	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+	RCC_OscInitStruct.PLL.PLLQ = 7;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+		Error_Handler();
+	}
+	/** Initializes the CPU, AHB and APB busses clocks
+	 */
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
+		Error_Handler();
+	}
 }
 
 /* USER CODE BEGIN 4 */
@@ -349,13 +354,19 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM3) {
 	}
 	if (htim->Instance == TIM9) {
-		if (motor1.pos_final - motor1.pos_inicial > 0) {
+		if (dir == 0) {
+			valor_PWM = 2799 - motor1.pos_objetivo[cont_samp] / VEL_MAX * 2799;
+			PWM_config.Pulse = valor_PWM;
+			TIM_OC2_SetConfig(TIM12, &PWM_config);
+			TIM12->CCR1 = TIM12->CCR2;
+		}
+		if (dir == 1) {
 			valor_PWM = motor1.pos_objetivo[cont_samp] / VEL_MAX * 2799;
 			PWM_config.Pulse = valor_PWM;
 			TIM_OC2_SetConfig(TIM12, &PWM_config);
 			TIM12->CCR1 = TIM12->CCR2;
-			cont_samp++;
 		}
+		cont_samp++;
 	}
 	if (htim->Instance == TIM12) {
 	}
@@ -363,15 +374,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void) {
+	/* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
 
-  /* USER CODE END Error_Handler_Debug */
+	/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
