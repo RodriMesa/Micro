@@ -77,7 +77,7 @@ int interpolador_vel(double pos_init, double pos_fin, double tiempo,
 		acel_nes = (VEL_MAX / (tiempo + (pos_fin - pos_init) / VEL_MAX));
 		tau = VEL_MAX / acel_nes;
 		cant_pun_tau = tau / TIEMPO_SAMP;
-
+		pend = VEL_MAX / tau;
 		for (int i = 0; i <= cant_pun_tau; i++) {
 			q_vec[i] = TIEMPO_SAMP * i * pend;
 		}

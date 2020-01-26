@@ -48,13 +48,10 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t dato_recepcion_SPI, pTxData = 0;
-volatile int cont_datos_SPI = 0, flag_mensaje_completo = 3, contador_instrucciones=0;
-char str[50] = { 0 };
 enum Estado {
-		Activado, Desactivado, Modo_Homing, Modo_Normal, Error
-	};
-struct Motor{
+	Activado, Desactivado, Modo_Homing, Modo_Normal, Error
+};
+typedef struct {
 	float pos_objetivo[15000];
 	float pos_actual;
 	float pos_final;
@@ -63,7 +60,14 @@ struct Motor{
 	enum Estado estado_actual;
 	long cantidad_puntos;
 	float vel_objetivo;
-}motor;
+} motor;
+motor motor1, motor2;
+uint8_t dato_recepcion_SPI, pTxData = 0, cont_samp = 0;
+volatile int cont_datos_SPI = 0, flag_mensaje_completo = 3,
+		contador_instrucciones = 0, flag_configuracion_PWM = 1, flag_cambio = 0,dir;
+char str[50] = { 0 };
+float valor_PWM;
+TIM_OC_InitTypeDef PWM_config = { 0 };
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -128,7 +132,7 @@ int main(void)
 		if (flag_mensaje_completo == 0) {
 			cant = identificador(str, instrucciones, contador_instrucciones);
 			flag_mensaje_completo = 1;
-			contador_instrucciones=0;
+			contador_instrucciones = 0;
 		}
 		// identificar comandos
 		if (flag_mensaje_completo == 1) {
@@ -170,10 +174,10 @@ int main(void)
 						// saca vel media con consigna, la pos actual y tiempo
 						//calcula el duty cycle segun la vel
 						//calcula la cantidad de pulsos del enconder para llegar a esta pos
-
 						//aca se hace la interpolacion
+						flag_cambio = 1;
 						estado = Modo_Normal;
-						i+=3;
+						i += 3;
 					}
 					break;
 				case error:
@@ -201,8 +205,10 @@ int main(void)
 						pTxData = 'E';
 						HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
 					}
-					HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin, GPIO_PIN_SET);
-					HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin, GPIO_PIN_RESET);
+					HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin,
+							GPIO_PIN_SET);
+					HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin,
+							GPIO_PIN_RESET);
 					__HAL_SPI_CLEAR_OVRFLAG(&hspi2);
 					HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
 					break;
@@ -213,7 +219,7 @@ int main(void)
 
 			}
 			flag_mensaje_completo = 2;
-			cant=0;
+			cant = 0;
 		}
 
 		switch (estado) {
@@ -246,6 +252,20 @@ int main(void)
 			//activar los pwm con el
 			//control de pocicion y lectura de encoder
 			//manifulacion del efector final
+			if (flag_cambio == 1) {
+				flag_cambio=0;
+				dir=interpolador_vel(instrucciones[2], instrucciones[3], instrucciones[5],motor1.pos_objetivo);
+				//aca hay que esperar a que todos los esclavos esten listos
+				HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+				HAL_TIM_Base_Start_IT(&htim9);
+				if (dir>0){
+
+				}else{
+
+				}
+
+
+			}
 			break;
 		case Error:
 			// desactivar l298
@@ -310,15 +330,36 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 	str[cont_datos_SPI - 1] = dato_recepcion_SPI;
 	if (str[cont_datos_SPI - 1] == ':') {
 		flag_mensaje_completo = 0;
-		contador_instrucciones=cont_datos_SPI;
+		contador_instrucciones = cont_datos_SPI;
 		cont_datos_SPI = 0;
 	}
 	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
 }
 
-
-
-
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (flag_configuracion_PWM == 1) {
+		PWM_config.OCMode = TIM_OCMODE_PWM1;
+		PWM_config.Pulse = 0;
+		PWM_config.OCPolarity = TIM_OCPOLARITY_HIGH;
+		PWM_config.OCFastMode = TIM_OCFAST_DISABLE;
+		flag_configuracion_PWM = 0;
+	}
+	if (htim->Instance == TIM1) {
+	}
+	if (htim->Instance == TIM3) {
+	}
+	if (htim->Instance == TIM9) {
+		if (motor1.pos_final - motor1.pos_inicial > 0) {
+			valor_PWM = motor1.pos_objetivo[cont_samp] / VEL_MAX * 2799;
+			PWM_config.Pulse = valor_PWM;
+			TIM_OC2_SetConfig(TIM12, &PWM_config);
+			TIM12->CCR1 = TIM12->CCR2;
+			cont_samp++;
+		}
+	}
+	if (htim->Instance == TIM12) {
+	}
+}
 /* USER CODE END 4 */
 
 /**
