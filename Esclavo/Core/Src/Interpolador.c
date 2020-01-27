@@ -52,10 +52,9 @@ void interpolador(double pos_init, double pos_fin, double tiempo, float *q_vec) 
 	}
 }
 int interpolador_vel(double pos_init, double pos_fin, double tiempo,
-		float *q_vec) {
+		float *q_vec,int cant_pun_tot) {
 	double acel_nes, tau, pend;
-	int cant_pun_tot, cant_pun_tau;
-	cant_pun_tot = tiempo / TIEMPO_SAMP;
+	int cant_pun_tau;
 	if (pos_fin - pos_init > 0) {
 		acel_nes = (VEL_MAX / (tiempo - (pos_fin - pos_init) / VEL_MAX));
 		tau = VEL_MAX / acel_nes;

@@ -65,9 +65,10 @@ motor motor1, motor2;
 uint8_t dato_recepcion_SPI, pTxData = 0, cont_samp = 0;
 volatile int cont_datos_SPI = 0, flag_mensaje_completo = 3,
 		contador_instrucciones = 0, flag_configuracion_PWM = 1, flag_cambio = 0,
-		dir;
+		dir, cant_pun_tot;
+;
 char str[50] = { 0 };
-float valor_PWM;
+uint32_t valor_PWM;
 TIM_OC_InitTypeDef PWM_config = { 0 };
 /* USER CODE END PV */
 
@@ -90,6 +91,10 @@ int main(void) {
 	// Declarar variables
 	int cant = 0, flag_activacion, flag_homing;
 	double instrucciones[50] = { };
+	PWM_config.OCMode = TIM_OCMODE_PWM1;
+	PWM_config.Pulse = 0;
+	PWM_config.OCPolarity = TIM_OCPOLARITY_HIGH;
+	PWM_config.OCFastMode = TIM_OCFAST_DISABLE;
 	// init variables
 	enum Estado estado = Desactivado;
 	int comando;
@@ -159,6 +164,8 @@ int main(void) {
 						estado = Activado;
 						flag_activacion = 1;
 						flag_cambio = 1;
+						HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
+								GPIO_PIN_SET);
 					} else {
 					}
 					break;
@@ -177,6 +184,10 @@ int main(void) {
 						//calcula el duty cycle segun la vel
 						//calcula la cantidad de pulsos del enconder para llegar a esta pos
 						//aca se hace la interpolacion
+						cant_pun_tot = instrucciones[i + 3] / TIEMPO_SAMP;
+						dir = interpolador_vel(motor1.pos_inicial,
+								instrucciones[i + 1], instrucciones[i + 3],
+								motor1.pos_objetivo, cant_pun_tot);
 						flag_cambio = 1;
 						estado = Modo_Normal;
 						i += 3;
@@ -236,15 +247,17 @@ int main(void) {
 			break;
 		case Activado:
 			//energisar l298
-			if (flag_cambio==1){
-				flag_cambio=0;
-				HAL_GPIO_WritePin(L298_ON_GPIO_Port, L298_ON_Pin, GPIO_PIN_RESET);
+			if (flag_cambio == 1) {
+				flag_cambio = 0;
 			}
 			//
 			//
 			//
 			break;
 		case Modo_Homing:
+			if (flag_cambio == 1) {
+				flag_cambio = 0;
+			}
 			//caragar pwm modo homming
 			//sensar el final de carrera
 			//cambiar la dirreccion
@@ -259,16 +272,17 @@ int main(void) {
 			//manifulacion del efector final
 			if (flag_cambio == 1) {
 				flag_cambio = 0;
-				dir = interpolador_vel(instrucciones[2], instrucciones[3],
-						instrucciones[5], motor1.pos_objetivo);
+				flag_configuracion_PWM = 1;
 				//aca hay que esperar a que todos los esclavos esten listos
 				HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
 				HAL_TIM_Base_Start_IT(&htim9);
-				if (dir > 0) {
+				if (dir) {
 					PWM_config.Pulse = 2799;
-					TIM_OC2_SetConfig(TIM12, &PWM_config);
-					TIM12->CCR1 = TIM12->CCR2;
+					//TIM12->CCR1 = TIM12->CCR2;
+					//TIM_OC2_SetConfig(TIM12, &PWM_config);
+					HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,TIM_CHANNEL_1);
 					HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_SET);
+
 				} else {
 					HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
 				}
@@ -342,31 +356,35 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
-	if (flag_configuracion_PWM == 1) {
-		PWM_config.OCMode = TIM_OCMODE_PWM1;
-		PWM_config.Pulse = 0;
-		PWM_config.OCPolarity = TIM_OCPOLARITY_HIGH;
-		PWM_config.OCFastMode = TIM_OCFAST_DISABLE;
-		flag_configuracion_PWM = 0;
-	}
 	if (htim->Instance == TIM1) {
 	}
 	if (htim->Instance == TIM3) {
 	}
 	if (htim->Instance == TIM9) {
-		if (dir == 0) {
-			valor_PWM = 2799 - motor1.pos_objetivo[cont_samp] / VEL_MAX * 2799;
-			PWM_config.Pulse = valor_PWM;
-			TIM_OC2_SetConfig(TIM12, &PWM_config);
-			TIM12->CCR1 = TIM12->CCR2;
+		if (cont_samp < cant_pun_tot) {
+
+			if (dir) {
+				valor_PWM = 2799
+						- motor1.pos_objetivo[cont_samp] / VEL_MAX * 2799;
+				PWM_config.Pulse = valor_PWM;
+				//TIM12->CCR1 = TIM12->CCR2;
+				//TIM_OC2_SetConfig(TIM12, &PWM_config);
+				HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,TIM_CHANNEL_1);
+			} else {
+				valor_PWM = motor1.pos_objetivo[cont_samp] / VEL_MAX * 2799;
+				PWM_config.Pulse = valor_PWM;
+				//TIM12->CCR1 = TIM12->CCR2;
+				//TIM_OC2_SetConfig(TIM12, &PWM_config);
+				HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,TIM_CHANNEL_1);
+			}
+			cont_samp++;
+		} else {
+				PWM_config.Pulse = 0;
+				//TIM12->CCR1 = TIM12->CCR2;
+				//TIM_OC2_SetConfig(TIM12, &PWM_config);
+				HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,TIM_CHANNEL_1);
+				HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
 		}
-		if (dir == 1) {
-			valor_PWM = motor1.pos_objetivo[cont_samp] / VEL_MAX * 2799;
-			PWM_config.Pulse = valor_PWM;
-			TIM_OC2_SetConfig(TIM12, &PWM_config);
-			TIM12->CCR1 = TIM12->CCR2;
-		}
-		cont_samp++;
 	}
 	if (htim->Instance == TIM12) {
 	}
