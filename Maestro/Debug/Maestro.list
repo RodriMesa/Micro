@@ -1573,9 +1573,9 @@ void Cin_Dir(double *instrucciones,int i){
  800112a:	2b05      	cmp	r3, #5
  800112c:	ddf0      	ble.n	8001110 <Cin_Dir+0xc0>
 	}
-	s1[22] = '-';
+	s1[22] = '/';
  800112e:	4b0e      	ldr	r3, [pc, #56]	; (8001168 <Cin_Dir+0x118>)
- 8001130:	222d      	movs	r2, #45	; 0x2d
+ 8001130:	222f      	movs	r2, #47	; 0x2f
  8001132:	759a      	strb	r2, [r3, #22]
 	s1[23] = 'P';
  8001134:	4b0c      	ldr	r3, [pc, #48]	; (8001168 <Cin_Dir+0x118>)
@@ -2489,8 +2489,8 @@ int main(void) {
 	SPI_Transmit_1('D');
  80018b8:	2044      	movs	r0, #68	; 0x44
  80018ba:	f000 f9bd 	bl	8001c38 <SPI_Transmit_1>
-	SPI_Transmit_1('-');
- 80018be:	202d      	movs	r0, #45	; 0x2d
+	SPI_Transmit_1('/');
+ 80018be:	202f      	movs	r0, #47	; 0x2f
  80018c0:	f000 f9ba 	bl	8001c38 <SPI_Transmit_1>
 	SPI_Transmit_1('P');
  80018c4:	2050      	movs	r0, #80	; 0x50
@@ -2568,8 +2568,8 @@ int main(void) {
 						SPI_Transmit_1('D');
  800195a:	2044      	movs	r0, #68	; 0x44
  800195c:	f000 f96c 	bl	8001c38 <SPI_Transmit_1>
-						SPI_Transmit_1('-');
- 8001960:	202d      	movs	r0, #45	; 0x2d
+						SPI_Transmit_1('/');
+ 8001960:	202f      	movs	r0, #47	; 0x2f
  8001962:	f000 f969 	bl	8001c38 <SPI_Transmit_1>
 						SPI_Transmit_1('P');
  8001966:	2050      	movs	r0, #80	; 0x50
@@ -2617,8 +2617,8 @@ int main(void) {
 						SPI_Transmit_1('A');
  80019ac:	2041      	movs	r0, #65	; 0x41
  80019ae:	f000 f943 	bl	8001c38 <SPI_Transmit_1>
-						SPI_Transmit_1('-');
- 80019b2:	202d      	movs	r0, #45	; 0x2d
+						SPI_Transmit_1('/');
+ 80019b2:	202f      	movs	r0, #47	; 0x2f
  80019b4:	f000 f940 	bl	8001c38 <SPI_Transmit_1>
 						SPI_Transmit_1('P');
  80019b8:	2050      	movs	r0, #80	; 0x50
@@ -2664,8 +2664,8 @@ int main(void) {
 						SPI_Transmit_1('H');
  80019f8:	2048      	movs	r0, #72	; 0x48
  80019fa:	f000 f91d 	bl	8001c38 <SPI_Transmit_1>
-						SPI_Transmit_1('-');
- 80019fe:	202d      	movs	r0, #45	; 0x2d
+						SPI_Transmit_1('/');
+ 80019fe:	202f      	movs	r0, #47	; 0x2f
  8001a00:	f000 f91a 	bl	8001c38 <SPI_Transmit_1>
 						//Verificar consigna
 						SPI_Transmit_1('P');

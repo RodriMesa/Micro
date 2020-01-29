@@ -105,7 +105,7 @@ int main(void) {
 	MX_SPI2_Init();
 	/* USER CODE BEGIN 2 */
 	SPI_Transmit_1('D');
-	SPI_Transmit_1('-');
+	SPI_Transmit_1('/');
 	SPI_Transmit_1('P');
 	SPI_Transmit_1(':');
 	Mi_Timer();
@@ -129,7 +129,7 @@ int main(void) {
 				case Modo_desactivado:
 					if (flag_activacion) {
 						SPI_Transmit_1('D');
-						SPI_Transmit_1('-');
+						SPI_Transmit_1('/');
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
 						Mi_Timer();
@@ -147,7 +147,7 @@ int main(void) {
 				case Modo_activado:
 					if (!flag_activacion) {
 						SPI_Transmit_1('A');
-						SPI_Transmit_1('-');
+						SPI_Transmit_1('/');
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
 						Mi_Timer();
@@ -165,7 +165,7 @@ int main(void) {
 						//Prender un LED
 						//Mandar consigna de homing
 						SPI_Transmit_1('H');
-						SPI_Transmit_1('-');
+						SPI_Transmit_1('/');
 						//Verificar consigna
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');

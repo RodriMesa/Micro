@@ -85,7 +85,7 @@ void Cin_Dir(double *instrucciones,int i){
 //		s2[l + 16] = s[l];
 		s1[l + 16] = s[l];
 	}
-	s1[22] = '-';
+	s1[22] = '/';
 	s1[23] = 'P';
 	s1[24] = ':';
 //	s2[22] = '-';
