@@ -19,7 +19,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 		switch (str[i]) {
 		case 'r':
 		case 'R':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = Estados;
 				j++;
 			}
@@ -27,7 +27,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 			break;
 		case 'a':
 		case 'A':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = Activar;
 				j++;
 			}
@@ -35,7 +35,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 			break;
 		case 'd':
 		case 'D':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = Desactivar;
 				j++;
 			}
@@ -43,7 +43,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 			break;
 		case 'h':
 		case 'H':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = Modo_homing;
 				j++;
 			}
@@ -51,7 +51,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 			break;
 		case 'e':
 		case 'E':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = error;
 				j++;
 			}
@@ -59,7 +59,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 			break;
 		case 'p':
 		case 'P':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = Preguntar;
 				j++;
 			}
@@ -68,12 +68,12 @@ int identificador(char *str, double *instrucciones, int cont) {
 		case 'i':
 		case 'I':
 			i++;
-			while ((str[i] != '-') && (i < cont)) {
+			while ((str[i] != '/') && (i < cont)) {
 				k = 0;
 				if (str[i] == '_') {
 					i++;
 				}
-				while ((str[i] != '_') && (i < cont) && (str[i] != '-')) {
+				while ((str[i] != '_') && (i < cont) && (str[i] != '/')) {
 					tmp[k] = str[i];
 					k++;
 					i++;

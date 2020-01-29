@@ -1309,14 +1309,14 @@ int identificador(char *str, double *instrucciones, int cont) {
  8000fd8:	08000fdd 	.word	0x08000fdd
 		case 'r':
 		case 'R':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
  8000fdc:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  8000fe0:	3301      	adds	r3, #1
  8000fe2:	f107 020c 	add.w	r2, r7, #12
  8000fe6:	6812      	ldr	r2, [r2, #0]
  8000fe8:	4413      	add	r3, r2
  8000fea:	781b      	ldrb	r3, [r3, #0]
- 8000fec:	2b2d      	cmp	r3, #45	; 0x2d
+ 8000fec:	2b2f      	cmp	r3, #47	; 0x2f
  8000fee:	d009      	beq.n	8001004 <identificador+0x150>
  8000ff0:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  8000ff4:	3301      	adds	r3, #1
@@ -1348,14 +1348,14 @@ int identificador(char *str, double *instrucciones, int cont) {
  8001032:	e1a2      	b.n	800137a <identificador+0x4c6>
 		case 'a':
 		case 'A':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
  8001034:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  8001038:	3301      	adds	r3, #1
  800103a:	f107 020c 	add.w	r2, r7, #12
  800103e:	6812      	ldr	r2, [r2, #0]
  8001040:	4413      	add	r3, r2
  8001042:	781b      	ldrb	r3, [r3, #0]
- 8001044:	2b2d      	cmp	r3, #45	; 0x2d
+ 8001044:	2b2f      	cmp	r3, #47	; 0x2f
  8001046:	d009      	beq.n	800105c <identificador+0x1a8>
  8001048:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  800104c:	3301      	adds	r3, #1
@@ -1387,14 +1387,14 @@ int identificador(char *str, double *instrucciones, int cont) {
  800108a:	e176      	b.n	800137a <identificador+0x4c6>
 		case 'd':
 		case 'D':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
  800108c:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  8001090:	3301      	adds	r3, #1
  8001092:	f107 020c 	add.w	r2, r7, #12
  8001096:	6812      	ldr	r2, [r2, #0]
  8001098:	4413      	add	r3, r2
  800109a:	781b      	ldrb	r3, [r3, #0]
- 800109c:	2b2d      	cmp	r3, #45	; 0x2d
+ 800109c:	2b2f      	cmp	r3, #47	; 0x2f
  800109e:	d009      	beq.n	80010b4 <identificador+0x200>
  80010a0:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  80010a4:	3301      	adds	r3, #1
@@ -1426,14 +1426,14 @@ int identificador(char *str, double *instrucciones, int cont) {
  80010e0:	e14b      	b.n	800137a <identificador+0x4c6>
 		case 'h':
 		case 'H':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
  80010e2:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  80010e6:	3301      	adds	r3, #1
  80010e8:	f107 020c 	add.w	r2, r7, #12
  80010ec:	6812      	ldr	r2, [r2, #0]
  80010ee:	4413      	add	r3, r2
  80010f0:	781b      	ldrb	r3, [r3, #0]
- 80010f2:	2b2d      	cmp	r3, #45	; 0x2d
+ 80010f2:	2b2f      	cmp	r3, #47	; 0x2f
  80010f4:	d009      	beq.n	800110a <identificador+0x256>
  80010f6:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  80010fa:	3301      	adds	r3, #1
@@ -1465,14 +1465,14 @@ int identificador(char *str, double *instrucciones, int cont) {
  8001136:	e120      	b.n	800137a <identificador+0x4c6>
 		case 'e':
 		case 'E':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
  8001138:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  800113c:	3301      	adds	r3, #1
  800113e:	f107 020c 	add.w	r2, r7, #12
  8001142:	6812      	ldr	r2, [r2, #0]
  8001144:	4413      	add	r3, r2
  8001146:	781b      	ldrb	r3, [r3, #0]
- 8001148:	2b2d      	cmp	r3, #45	; 0x2d
+ 8001148:	2b2f      	cmp	r3, #47	; 0x2f
  800114a:	d009      	beq.n	8001160 <identificador+0x2ac>
  800114c:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  8001150:	3301      	adds	r3, #1
@@ -1504,14 +1504,14 @@ int identificador(char *str, double *instrucciones, int cont) {
  800118c:	e0f5      	b.n	800137a <identificador+0x4c6>
 		case 'p':
 		case 'P':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
  800118e:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  8001192:	3301      	adds	r3, #1
  8001194:	f107 020c 	add.w	r2, r7, #12
  8001198:	6812      	ldr	r2, [r2, #0]
  800119a:	4413      	add	r3, r2
  800119c:	781b      	ldrb	r3, [r3, #0]
- 800119e:	2b2d      	cmp	r3, #45	; 0x2d
+ 800119e:	2b2f      	cmp	r3, #47	; 0x2f
  80011a0:	d009      	beq.n	80011b6 <identificador+0x302>
  80011a2:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  80011a6:	3301      	adds	r3, #1
@@ -1547,7 +1547,7 @@ int identificador(char *str, double *instrucciones, int cont) {
  80011e4:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  80011e8:	3301      	adds	r3, #1
  80011ea:	f8c7 310c 	str.w	r3, [r7, #268]	; 0x10c
-			while ((str[i] != '-') && (i < cont)) {
+			while ((str[i] != '/') && (i < cont)) {
  80011ee:	e070      	b.n	80012d2 <identificador+0x41e>
 				k = 0;
  80011f0:	2300      	movs	r3, #0
@@ -1565,7 +1565,7 @@ int identificador(char *str, double *instrucciones, int cont) {
  800120c:	3301      	adds	r3, #1
  800120e:	f8c7 310c 	str.w	r3, [r7, #268]	; 0x10c
 				}
-				while ((str[i] != '_') && (i < cont) && (str[i] != '-')) {
+				while ((str[i] != '_') && (i < cont) && (str[i] != '/')) {
  8001212:	e017      	b.n	8001244 <identificador+0x390>
 					tmp[k] = str[i];
  8001214:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
@@ -1586,7 +1586,7 @@ int identificador(char *str, double *instrucciones, int cont) {
  800123a:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  800123e:	3301      	adds	r3, #1
  8001240:	f8c7 310c 	str.w	r3, [r7, #268]	; 0x10c
-				while ((str[i] != '_') && (i < cont) && (str[i] != '-')) {
+				while ((str[i] != '_') && (i < cont) && (str[i] != '/')) {
  8001244:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  8001248:	f107 020c 	add.w	r2, r7, #12
  800124c:	6812      	ldr	r2, [r2, #0]
@@ -1604,7 +1604,7 @@ int identificador(char *str, double *instrucciones, int cont) {
  800126a:	6812      	ldr	r2, [r2, #0]
  800126c:	4413      	add	r3, r2
  800126e:	781b      	ldrb	r3, [r3, #0]
- 8001270:	2b2d      	cmp	r3, #45	; 0x2d
+ 8001270:	2b2f      	cmp	r3, #47	; 0x2f
  8001272:	d1cf      	bne.n	8001214 <identificador+0x360>
 				}
 				numero = strtod(tmp, &puntero);
@@ -1643,13 +1643,13 @@ int identificador(char *str, double *instrucciones, int cont) {
  80012ca:	f8d7 30f8 	ldr.w	r3, [r7, #248]	; 0xf8
  80012ce:	2b32      	cmp	r3, #50	; 0x32
  80012d0:	ddef      	ble.n	80012b2 <identificador+0x3fe>
-			while ((str[i] != '-') && (i < cont)) {
+			while ((str[i] != '/') && (i < cont)) {
  80012d2:	f8d7 310c 	ldr.w	r3, [r7, #268]	; 0x10c
  80012d6:	f107 020c 	add.w	r2, r7, #12
  80012da:	6812      	ldr	r2, [r2, #0]
  80012dc:	4413      	add	r3, r2
  80012de:	781b      	ldrb	r3, [r3, #0]
- 80012e0:	2b2d      	cmp	r3, #45	; 0x2d
+ 80012e0:	2b2f      	cmp	r3, #47	; 0x2f
  80012e2:	d006      	beq.n	80012f2 <identificador+0x43e>
  80012e4:	1d3b      	adds	r3, r7, #4
  80012e6:	f8d7 210c 	ldr.w	r2, [r7, #268]	; 0x10c
