@@ -61,15 +61,15 @@ int interpolador_vel(double pos_init, double pos_fin, double tiempo,
 		cant_pun_tau = tau / TIEMPO_SAMP;
 		pend = VEL_MAX / tau;
 		for (int i = 0; i <= cant_pun_tau; i++) {
-			q_vec[i] = TIEMPO_SAMP * i * pend;
+			q_vec[i] = TIEMPO_SAMP * i * pend/ VEL_MAX ;
 		}
 
 		for (int i = cant_pun_tau + 1; i <= (cant_pun_tot - cant_pun_tau);
 				i++) {
-			q_vec[i] = VEL_MAX;
+			q_vec[i] =1;
 		}
 		for (int i = (cant_pun_tot - cant_pun_tau) + 1; i < cant_pun_tot; i++) {
-			q_vec[i] = VEL_MAX - TIEMPO_SAMP * (i-((cant_pun_tot - cant_pun_tau) + 1)) * pend;
+			q_vec[i] = (VEL_MAX - TIEMPO_SAMP * (i-((cant_pun_tot - cant_pun_tau) + 1)) * pend)/ VEL_MAX ;
 		}
 		return 1;
 	} else {

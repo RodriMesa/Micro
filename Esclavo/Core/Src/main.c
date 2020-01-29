@@ -288,12 +288,23 @@ int main(void)
 					//TIM12->CCR1 = TIM12->CCR2;
 					//TIM_OC2_SetConfig(TIM12, &PWM_config);
 					HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,TIM_CHANNEL_1);
+					HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
+													GPIO_PIN_RESET);
 					HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_SET);
 					HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+					HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
+													GPIO_PIN_SET);
 
 
 				} else {
+					PWM_config.Pulse = 0;
+					HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,TIM_CHANNEL_1);
+					HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
+													GPIO_PIN_RESET);
 					HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
+					HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+					HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
+													GPIO_PIN_SET);
 				}
 
 			}
@@ -375,17 +386,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 	if (htim->Instance == TIM9) {
 		if (cont_samp < cant_pun_tot) {
-			motor1.pos_actual=TIM1->CNT/600*2*M_PI+TIM1->CNT%600*2*M_PI/600;
+			motor1.pos_actual=(TIM1->CNT/600*2*M_PI+TIM1->CNT%600*2*M_PI/600)*360/2/M_PI;
 			if (dir) {
 				valor_PWM = 2799
-						- motor1.pos_objetivo[cont_samp] / VEL_MAX * 2799;
+						- motor1.pos_objetivo[cont_samp]* 2799;
 				PWM_config.Pulse = valor_PWM;
 				//TIM12->CCR1 = TIM12->CCR2;
 				//TIM_OC2_SetConfig(TIM12, &PWM_config);
 				HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,TIM_CHANNEL_1);
 				HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
 			} else {
-				valor_PWM = motor1.pos_objetivo[cont_samp] / VEL_MAX * 2799;
+				valor_PWM = motor1.pos_objetivo[cont_samp]* 2799;
 				PWM_config.Pulse = valor_PWM;
 				//TIM12->CCR1 = TIM12->CCR2;
 				//TIM_OC2_SetConfig(TIM12, &PWM_config);
