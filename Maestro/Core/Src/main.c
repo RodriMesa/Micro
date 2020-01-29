@@ -104,7 +104,11 @@ int main(void) {
 	MX_USB_DEVICE_Init();
 	MX_SPI2_Init();
 	/* USER CODE BEGIN 2 */
-	SPI_Transmit_1(1);
+	SPI_Transmit_1('D');
+	SPI_Transmit_1('-');
+	SPI_Transmit_1('P');
+	SPI_Transmit_1(':');
+	Mi_Timer();
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
