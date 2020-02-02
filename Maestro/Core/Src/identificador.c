@@ -19,7 +19,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 		switch (str[i]) {
 		case 'd':
 		case 'D':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = Modo_desactivado;
 				j++;
 			}
@@ -27,7 +27,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 			break;
 		case 'a':
 		case 'A':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = Modo_activado;
 				j++;
 			}
@@ -35,7 +35,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 			break;
 		case 'h':
 		case 'H':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = Modo_homing;
 				j++;
 			}
@@ -43,7 +43,7 @@ int identificador(char *str, double *instrucciones, int cont) {
 			break;
 		case 'r':
 		case 'R':
-			if (str[i + 1] == '-' || str[i + 1] == ':') {
+			if (str[i + 1] == '/' || str[i + 1] == ':') {
 				instrucciones[j] = Resumen;
 				j++;
 			}
@@ -52,12 +52,12 @@ int identificador(char *str, double *instrucciones, int cont) {
 		case 'c':
 		case 'C':
 			i++;
-			while ((str[i] != '-') && (i < cont)) {
+			while ((str[i] != '/') && (i < cont)) {
 				k = 0;
 				if (str[i] == '_') {
 					i++;
 				}
-				while ((str[i] != '_') && (i < cont) && (str[i] != '-')) {
+				while ((str[i] != '_') && (i < cont) && (str[i] != '/')) {
 					tmp[k] = str[i];
 					k++;
 					i++;
@@ -82,12 +82,12 @@ int identificador(char *str, double *instrucciones, int cont) {
 		case 'i':
 		case 'I':
 			i++;
-			while ((str[i] != '-') && (i < cont)) {
+			while ((str[i] != '/') && (i < cont)) {
 				k = 0;
 				if (str[i] == '_') {
 					i++;
 				}
-				while ((str[i] != '_') && (i < cont) && (str[i] != '-')) {
+				while ((str[i] != '_') && (i < cont) && (str[i] != '/')) {
 					tmp[k] = str[i];
 					k++;
 					i++;

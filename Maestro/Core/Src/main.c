@@ -23,7 +23,7 @@
 #include "spi.h"
 #include "usb_device.h"
 #include "gpio.h"
-
+#include "funciones.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
@@ -67,59 +67,59 @@ void SystemClock_Config(void);
 /* USER CODE END 0 */
 
 /**
-  * @brief  The application entry point.
-  * @retval int
-  */
-int main(void)
-{
-  /* USER CODE BEGIN 1 */
+ * @brief  The application entry point.
+ * @retval int
+ */
+int main(void) {
+	/* USER CODE BEGIN 1 */
 	int cant = 0;
 	double instrucciones[50];
 	//Flags
 	int flag_activacion = 0;
-	int flag_homing = 0,flag_cambio=0;
+	int flag_homing = 0, flag_cambio = 0;
 	//Variables enum
 	enum Estado estado = Desactivado;
 	//HAL_StatusTypeDef SPI_estado;
 	int comando;
-  /* USER CODE END 1 */
-  
+	/* USER CODE END 1 */
 
-  /* MCU Configuration--------------------------------------------------------*/
+	/* MCU Configuration--------------------------------------------------------*/
 
-  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-  HAL_Init();
+	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+	HAL_Init();
 
-  /* USER CODE BEGIN Init */
+	/* USER CODE BEGIN Init */
 
-  /* USER CODE END Init */
+	/* USER CODE END Init */
 
-  /* Configure the system clock */
-  SystemClock_Config();
+	/* Configure the system clock */
+	SystemClock_Config();
 
-  /* USER CODE BEGIN SysInit */
+	/* USER CODE BEGIN SysInit */
 
-  /* USER CODE END SysInit */
+	/* USER CODE END SysInit */
 
-  /* Initialize all configured peripherals */
-  MX_GPIO_Init();
-  MX_USB_DEVICE_Init();
-  MX_SPI2_Init();
-  /* USER CODE BEGIN 2 */
-	SPI_Transmit_1(1);
-  /* USER CODE END 2 */
- 
- 
+	/* Initialize all configured peripherals */
+	MX_GPIO_Init();
+	MX_USB_DEVICE_Init();
+	MX_SPI2_Init();
+	/* USER CODE BEGIN 2 */
+	SPI_Transmit_1('D');
+	SPI_Transmit_1('/');
+	SPI_Transmit_1('P');
+	SPI_Transmit_1(':');
+	Mi_Timer();
+	/* USER CODE END 2 */
 
-  /* Infinite loop */
-  /* USER CODE BEGIN WHILE */
+	/* Infinite loop */
+	/* USER CODE BEGIN WHILE */
 	while (1) {
 		//Generar string
 		//Generar comandos
 		if (flag_mensaje_completo == 0) {
 			cant = identificador(str, instrucciones, contador_instrucciones);
 			flag_mensaje_completo = 1;
-			contador_instrucciones=0;
+			contador_instrucciones = 0;
 		}
 		//Identificar comandos
 		if (flag_mensaje_completo == 1) {
@@ -129,7 +129,7 @@ int main(void)
 				case Modo_desactivado:
 					if (flag_activacion) {
 						SPI_Transmit_1('D');
-						SPI_Transmit_1('-');
+						SPI_Transmit_1('/');
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
 						Mi_Timer();
@@ -137,7 +137,7 @@ int main(void)
 							estado = Desactivado;
 							flag_activacion = 0;
 							flag_homing = 0;
-							flag_cambio=1;
+							flag_cambio = 1;
 
 						} else {
 							i--;
@@ -147,14 +147,14 @@ int main(void)
 				case Modo_activado:
 					if (!flag_activacion) {
 						SPI_Transmit_1('A');
-						SPI_Transmit_1('-');
+						SPI_Transmit_1('/');
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
 						Mi_Timer();
 						if (pRxData == 'A') {
 							estado = Activado;
 							flag_activacion = 1;
-							flag_cambio=1;
+							flag_cambio = 1;
 						} else {
 							i--;
 						}
@@ -165,7 +165,7 @@ int main(void)
 						//Prender un LED
 						//Mandar consigna de homing
 						SPI_Transmit_1('H');
-						SPI_Transmit_1('-');
+						SPI_Transmit_1('/');
 						//Verificar consigna
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
@@ -173,7 +173,7 @@ int main(void)
 						if (pRxData == 'H') {
 							estado = Modo_Homing;
 							flag_homing = 1;
-							flag_cambio=1;
+							flag_cambio = 1;
 						} else {
 							i--;
 						}
@@ -181,35 +181,17 @@ int main(void)
 					break;
 				case Cin_dir:
 					if (flag_activacion && flag_homing) {
-						int k = 0, l = 0;
-						static char string[40];
-						char s[7];
-						string[0] = 'I';
-						string[1] = '_';
-						for (k = i; k < (5 + i); k++) {
-							snprintf(s, 7, "%lf", instrucciones[k+1]);
-							for (l = 0; l < 6; l++) {
-								string[l + k * 7 + 2] = s[l];
-							}
-							string[l + k * 7 + 2] = '_';
-						}
-						string[36] = '-';
-						string[37] = 'P';
-						string[38] = ':';
-						//Mandar consigna de cinemática directa
-						for (k = 0; k < 39; k++) {
-							SPI_Transmit_1(string[k]);
-						}
+						Cin_Dir(instrucciones, i);
 						Mi_Timer();
 						//Verificar que se logre
 						if (pRxData == 'N') {
 							estado = Modo_Normal;
-							flag_cambio=1;
+							flag_cambio = 1;
 						} else {
 							i--;
 						}
 					}
-					i += 5;
+					i += 6;
 					break;
 				case Cin_inv:
 					i += 5;
@@ -220,138 +202,139 @@ int main(void)
 				pRxData = 'K';
 			}
 			flag_mensaje_completo = 2;
-			cant=0;
+			cant = 0;
 		}
 		switch (estado) {
 		case Activado:
-			if(flag_cambio){
-				//Prender LED
-				HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_SET);
-				flag_cambio=0;
+			if (flag_cambio) {
+				Leds_Activado();
+				flag_cambio = 0;
 			}
 			break;
 		case Desactivado:
-			if(flag_cambio){
+			if (flag_cambio) {
 				//Prender LED
-				HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_SET);
-				flag_cambio=0;
+				Leds_Desactivado();
+				flag_cambio = 0;
 			}
 			break;
 		case Modo_Homing:
-			if(flag_cambio){
+			if (flag_cambio) {
 				//Prender LED
-				HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_SET);
-				flag_cambio=0;
+				Leds_Homing();
+				flag_cambio = 0;
 			}
 			break;
 		case Modo_Normal:
-			if(flag_cambio){
+			if (flag_cambio) {
 				//Prender LED
-				HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_RESET);
-				HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_SET);
-				flag_cambio=0;
+				Leds_Normal();
+				flag_cambio = 0;
 			}
 			break;
 		case Error:
-			HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_RESET);
-			HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_SET);
+			Leds_Error();
 			break;
 		}
-    /* USER CODE END WHILE */
+		/* USER CODE END WHILE */
 
-    /* USER CODE BEGIN 3 */
+		/* USER CODE BEGIN 3 */
 	}
-  /* USER CODE END 3 */
+	/* USER CODE END 3 */
 }
 
 /**
-  * @brief System Clock Configuration
-  * @retval None
-  */
-void SystemClock_Config(void)
-{
-  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
-  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
+ * @brief System Clock Configuration
+ * @retval None
+ */
+void SystemClock_Config(void) {
+	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
+	RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
 
-  /** Configure the main internal regulator output voltage 
-  */
-  __HAL_RCC_PWR_CLK_ENABLE();
-  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-  /** Initializes the CPU, AHB and APB busses clocks 
-  */
-  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
-  RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
-  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
-  RCC_OscInitStruct.PLL.PLLM = 4;
-  RCC_OscInitStruct.PLL.PLLN = 168;
-  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-  RCC_OscInitStruct.PLL.PLLQ = 7;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /** Initializes the CPU, AHB and APB busses clocks 
-  */
-  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
-                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
-  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
-  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
+	/** Configure the main internal regulator output voltage
+	 */
+	__HAL_RCC_PWR_CLK_ENABLE();
+	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+	/** Initializes the CPU, AHB and APB busses clocks
+	 */
+	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSE;
+	RCC_OscInitStruct.HSEState = RCC_HSE_BYPASS;
+	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
+	RCC_OscInitStruct.PLL.PLLM = 4;
+	RCC_OscInitStruct.PLL.PLLN = 168;
+	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+	RCC_OscInitStruct.PLL.PLLQ = 7;
+	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
+		Error_Handler();
+	}
+	/** Initializes the CPU, AHB and APB busses clocks
+	 */
+	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
+			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
+	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
+	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
 
-  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
-  {
-    Error_Handler();
-  }
+	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
+		Error_Handler();
+	}
 }
 
 /* USER CODE BEGIN 4 */
-/*Va a haber dos funciones slave transmit, una para cada esclavo, va a ser una sola interrupcion externa por placa
-La gestion de cada motor lo hace cada esclavo. En el struct tenemos que tener: Posicion actual, posicion deseada, dirección
-deseada, etc.*/
-void SPI_Transmit_1(uint8_t pTxData) { //Solo va a haber una sola función slave transmit, que transmite a
+/*Va a haber dos funciones slave transmit,
+ una para cada esclavo, va a ser una sola interrupcion externa por placa
+ La gestion de cada motor lo hace cada esclavo.
+ En el struct tenemos que tener: Posicion actual, posicion deseada, dirección
+ deseada, etc.*/
+//Esta funcion la tenemos que hacer contemplando el modo de trabajo.
+void SPI_Transmit_1(uint8_t pTxData) {
 
-	//static HAL_StatusTypeDef SPI_estado;
-	//while (flag_CB);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 	HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
-	//while (SPI_estado != HAL_OK);
 }
-void Mi_Timer() { //Esta funcion la tenemos que hacer contemplando el modo de trabajo.
-	long contador=0;
-	while (flag_INT){
-		contador++;
-		if (contador==1000000){
-			pRxData='K';
-			break;
-		}
-	}
+void SPI_Transmit_2(uint8_t pTxData) {
+
+	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET); //PIN NSS Esclavo 2 Bajo
+	//HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);	//PIN NSS Esclavo 2 Alto
+}
+void Mi_Timer() {
+	/*	long contador = 0;
+	 flag_INT = 1;
+	 switch (estado) {
+	 case 'A':
+	 while (flag_INT) {
+	 contador++;
+	 if (contador == 1000000) {
+	 pRxData = 'K';
+	 break;
+	 }
+	 }
+	 break;
+	 case 'D':
+	 while (flag_INT) {
+	 contador++;
+	 if (contador == 1000000) {
+	 pRxData = 'K';
+	 break;
+	 }
+	 }
+	 break;
+	 case 'H':
+	 while (flag_INT);
+	 break;
+	 case 'N':
+	 while (flag_INT);
+	 break;
+	 }
+	 */
+	while (flag_INT)
+		;
 	flag_INT = 1;
+
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	static uint8_t D_transmision = ':';
@@ -370,15 +353,14 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 /* USER CODE END 4 */
 
 /**
-  * @brief  This function is executed in case of error occurrence.
-  * @retval None
-  */
-void Error_Handler(void)
-{
-  /* USER CODE BEGIN Error_Handler_Debug */
+ * @brief  This function is executed in case of error occurrence.
+ * @retval None
+ */
+void Error_Handler(void) {
+	/* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
 
-  /* USER CODE END Error_Handler_Debug */
+	/* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT

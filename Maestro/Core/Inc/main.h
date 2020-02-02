@@ -55,6 +55,7 @@ void Error_Handler(void);
 
 /* USER CODE BEGIN EFP */
 void SPI_Transmit_1(uint8_t pTxData);
+void SPI_Transmit_2(uint8_t pTxData);
 void Mi_Timer();
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 /* USER CODE END EFP */
