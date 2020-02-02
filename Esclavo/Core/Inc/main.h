@@ -71,6 +71,8 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi);
 #define dir1_Pin GPIO_PIN_1
 #define dir1_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
+#define TIEMPO_SAMP 0.0002
+#define VEL_MAX 11.7705
 /* USER CODE END Private defines */
 
 #ifdef __cplusplus
