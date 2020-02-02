@@ -1,3 +1,4 @@
+"Core/Src/funciones.o"
 "Core/Src/gpio.o"
 "Core/Src/identificador.o"
 "Core/Src/main.o"

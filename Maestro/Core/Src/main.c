@@ -23,7 +23,7 @@
 #include "spi.h"
 #include "usb_device.h"
 #include "gpio.h"
-
+#include "funciones.h"
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "usbd_cdc_if.h"
@@ -47,10 +47,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-extern char dato_recepcion_USB;
-extern int cont_datos_USB;
-extern int flag_recepcion_USB;
-volatile int flag_mensaje_completo = 0;
+extern int contador_instrucciones;
+extern char str[50];
+extern int flag_mensaje_completo;
 volatile int flag_INT = 1;
 uint8_t pRxData = 'K';
 enum Estado {
@@ -61,9 +60,6 @@ enum Estado {
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void SPI_Transmit_1(uint8_t pTxData);
-void Mi_Timer();
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -77,11 +73,10 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin);
 int main(void) {
 	/* USER CODE BEGIN 1 */
 	int cant = 0;
-	char str[50];
 	double instrucciones[50];
 	//Flags
 	int flag_activacion = 0;
-	int flag_homing = 0;
+	int flag_homing = 0, flag_cambio = 0;
 	//Variables enum
 	enum Estado estado = Desactivado;
 	//HAL_StatusTypeDef SPI_estado;
@@ -109,22 +104,22 @@ int main(void) {
 	MX_USB_DEVICE_Init();
 	MX_SPI2_Init();
 	/* USER CODE BEGIN 2 */
-	SPI_Transmit_1(1);
+	SPI_Transmit_1('D');
+	SPI_Transmit_1('/');
+	SPI_Transmit_1('P');
+	SPI_Transmit_1(':');
+	Mi_Timer();
 	/* USER CODE END 2 */
+
 	/* Infinite loop */
 	/* USER CODE BEGIN WHILE */
 	while (1) {
 		//Generar string
-		if (flag_recepcion_USB) {
-			str[cont_datos_USB - 1] = dato_recepcion_USB;
-			flag_recepcion_USB = 0;
-			flag_mensaje_completo = 0;
-		}
 		//Generar comandos
-		if (str[cont_datos_USB - 1] == ':' && flag_mensaje_completo == 0) {
-			cant = identificador(str, instrucciones, cont_datos_USB);
+		if (flag_mensaje_completo == 0) {
+			cant = identificador(str, instrucciones, contador_instrucciones);
 			flag_mensaje_completo = 1;
-			cont_datos_USB = 0;
+			contador_instrucciones = 0;
 		}
 		//Identificar comandos
 		if (flag_mensaje_completo == 1) {
@@ -134,7 +129,7 @@ int main(void) {
 				case Modo_desactivado:
 					if (flag_activacion) {
 						SPI_Transmit_1('D');
-						SPI_Transmit_1('-');
+						SPI_Transmit_1('/');
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
 						Mi_Timer();
@@ -142,6 +137,7 @@ int main(void) {
 							estado = Desactivado;
 							flag_activacion = 0;
 							flag_homing = 0;
+							flag_cambio = 1;
 
 						} else {
 							i--;
@@ -151,13 +147,14 @@ int main(void) {
 				case Modo_activado:
 					if (!flag_activacion) {
 						SPI_Transmit_1('A');
-						SPI_Transmit_1('-');
+						SPI_Transmit_1('/');
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
 						Mi_Timer();
 						if (pRxData == 'A') {
 							estado = Activado;
 							flag_activacion = 1;
+							flag_cambio = 1;
 						} else {
 							i--;
 						}
@@ -168,7 +165,7 @@ int main(void) {
 						//Prender un LED
 						//Mandar consigna de homing
 						SPI_Transmit_1('H');
-						SPI_Transmit_1('-');
+						SPI_Transmit_1('/');
 						//Verificar consigna
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
@@ -176,6 +173,7 @@ int main(void) {
 						if (pRxData == 'H') {
 							estado = Modo_Homing;
 							flag_homing = 1;
+							flag_cambio = 1;
 						} else {
 							i--;
 						}
@@ -183,34 +181,17 @@ int main(void) {
 					break;
 				case Cin_dir:
 					if (flag_activacion && flag_homing) {
-						int k = 0, l = 0;
-						static char string[40];
-						char s[7];
-						string[0] = 'I';
-						string[1] = '_';
-						for (k = i; k < (5 + i); k++) {
-							snprintf(s, 7, "%lf", instrucciones[k]);
-							for (l = 0; l < 6; l++) {
-								string[l + k * 7 + 2] = s[l];
-							}
-							string[l + k * 7 + 2] = '_';
-						}
-						string[36] = '-';
-						string[37] = 'P';
-						string[38] = ':';
-						//Mandar consigna de cinemática directa
-						for (k = 0; k < 39; k++) {
-							SPI_Transmit_1(string[k]);
-						}
+						Cin_Dir(instrucciones, i);
 						Mi_Timer();
 						//Verificar que se logre
 						if (pRxData == 'N') {
 							estado = Modo_Normal;
+							flag_cambio = 1;
 						} else {
 							i--;
 						}
 					}
-					i += 5;
+					i += 6;
 					break;
 				case Cin_inv:
 					i += 5;
@@ -221,18 +202,38 @@ int main(void) {
 				pRxData = 'K';
 			}
 			flag_mensaje_completo = 2;
-
+			cant = 0;
 		}
 		switch (estado) {
 		case Activado:
+			if (flag_cambio) {
+				Leds_Activado();
+				flag_cambio = 0;
+			}
 			break;
 		case Desactivado:
+			if (flag_cambio) {
+				//Prender LED
+				Leds_Desactivado();
+				flag_cambio = 0;
+			}
 			break;
 		case Modo_Homing:
+			if (flag_cambio) {
+				//Prender LED
+				Leds_Homing();
+				flag_cambio = 0;
+			}
 			break;
 		case Modo_Normal:
+			if (flag_cambio) {
+				//Prender LED
+				Leds_Normal();
+				flag_cambio = 0;
+			}
 			break;
 		case Error:
+			Leds_Error();
 			break;
 		}
 		/* USER CODE END WHILE */
@@ -282,29 +283,69 @@ void SystemClock_Config(void) {
 }
 
 /* USER CODE BEGIN 4 */
+/*Va a haber dos funciones slave transmit,
+ una para cada esclavo, va a ser una sola interrupcion externa por placa
+ La gestion de cada motor lo hace cada esclavo.
+ En el struct tenemos que tener: Posicion actual, posicion deseada, dirección
+ deseada, etc.*/
+//Esta funcion la tenemos que hacer contemplando el modo de trabajo.
 void SPI_Transmit_1(uint8_t pTxData) {
-	//static HAL_StatusTypeDef SPI_estado;
-	//while (flag_CB);
+
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 	HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
 	HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
-	//while (SPI_estado != HAL_OK);
+}
+void SPI_Transmit_2(uint8_t pTxData) {
+
+	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET); //PIN NSS Esclavo 2 Bajo
+	//HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);	//PIN NSS Esclavo 2 Alto
 }
 void Mi_Timer() {
+	/*	long contador = 0;
+	 flag_INT = 1;
+	 switch (estado) {
+	 case 'A':
+	 while (flag_INT) {
+	 contador++;
+	 if (contador == 1000000) {
+	 pRxData = 'K';
+	 break;
+	 }
+	 }
+	 break;
+	 case 'D':
+	 while (flag_INT) {
+	 contador++;
+	 if (contador == 1000000) {
+	 pRxData = 'K';
+	 break;
+	 }
+	 }
+	 break;
+	 case 'H':
+	 while (flag_INT);
+	 break;
+	 case 'N':
+	 while (flag_INT);
+	 break;
+	 }
+	 */
 	while (flag_INT)
 		;
 	flag_INT = 1;
+
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	static uint8_t D_transmision = 'n';
+	static uint8_t D_transmision = ':';
 	flag_INT = 0;
 	switch (GPIO_Pin) {
-	case GPIO_PIN_8: 	//INT 1
+	case GPIO_PIN_8: 	//INT 1 Esclavo 1 (2 motores)
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 		HAL_SPI_TransmitReceive(&hspi2, &D_transmision, &pRxData, 1, 1);
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
 		break;
-	case GPIO_PIN_9: 	//INT2
+	case GPIO_PIN_9: 	//INT2 Esclavo 2
 		break;
 	}
 
