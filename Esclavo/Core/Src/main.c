@@ -70,7 +70,7 @@ uint8_t dato_recepcion_SPI, pTxData = 0, cnt_lis;
 volatile int cont_datos_SPI = 0, flag_mensaje_completo = 3,
 		contador_instrucciones = 0, flag_configuracion_PWM = 1, flag_cambio = 0,
 		dir, cant_pun_tot, cant_vueltas_mot1 = 0, flag_encoder = 0,
-		contador = 0;
+		contador = 0, flag_activacion = 0, flag_homing = 0;
 ;
 char str[50] = { 0 };
 float error_M, error_ant_M = 0, Ui = 0, Ui_ant = 0, Up, Ud, UPID, derivada;
@@ -97,7 +97,7 @@ void SystemClock_Config(void);
 int main(void) {
 	/* USER CODE BEGIN 1 */
 	// Declarar variables
-	int cant = 0, flag_activacion, flag_homing;
+	int cant = 0;
 	double instrucciones[50] = { };
 	motor1.pos_inicial = 0;
 	PWM_config.OCMode = TIM_OCMODE_PWM1;
@@ -165,7 +165,7 @@ int main(void) {
 								GPIO_PIN_RESET);
 						PWM_config.Pulse = 0;
 						HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,
-								TIM_CHANNEL_1);
+						TIM_CHANNEL_1);
 						HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin,
 								GPIO_PIN_RESET);
 						HAL_TIM_PWM_Stop(&htim12, TIM_CHANNEL_ALL);
@@ -199,7 +199,7 @@ int main(void) {
 					if (flag_activacion) {
 						//Realizar homming:configurar PWM a vel baja:
 						//simular un fin de carrera con un pull y una interrupcion
-						flag_homing = 1;
+
 						flag_cambio = 1;
 						estado = Modo_Homing;
 					}
@@ -219,7 +219,9 @@ int main(void) {
 							Vmin = fabs(motor1.pos_final - motor1.pos_inicial)
 									/ motor1.tiempo_total;
 							if (VEL_MAX < Vmin) {
-								estado = error;
+								estado = Error;
+								i += 3;
+								break;
 								//No puede realizarse
 								__NOP();
 
@@ -314,6 +316,11 @@ int main(void) {
 			break;
 		case Modo_Homing:
 			if (flag_cambio == 1) {
+				HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
+				PWM_config.Pulse = 1200;
+				HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,
+				TIM_CHANNEL_1);
+				HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
 				flag_cambio = 0;
 				motor1.pos_inicial = 0;
 			}
@@ -424,21 +431,22 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 		motor1.tiemp_act = TIEMPO_SAMP * cont_samp;
 		if (motor1.tiemp_act < motor1.tiempo_total) {
 			if (motor1.tiemp_act <= motor1.tau) {
-				motor1.pos_objetivo = motor1.pos_inicial
-						+ motor1.acel_nes * pow(motor1.tiemp_act, 2) / 2;
+				motor1.pos_objetivo = (motor1.pos_inicial
+						+ motor1.acel_nes * pow(motor1.tiemp_act, 2) / 2) * 600
+						/ 2 / M_PI + 800;
 			} else if (motor1.tiemp_act > motor1.tau
 					&& motor1.tiemp_act <= (motor1.tiempo_total - motor1.tau)) {
-				motor1.pos_objetivo = motor1.pos_inicial
+				motor1.pos_objetivo = (motor1.pos_inicial
 						+ motor1.acel_nes * motor1.tau
-								* (motor1.tiemp_act - motor1.tau / 2);
+								* (motor1.tiemp_act - motor1.tau / 2)) * 600 / 2
+						/ M_PI + 800;
 			} else if (motor1.tiemp_act > (motor1.tiempo_total - motor1.tau)
 					&& motor1.tiemp_act < motor1.tiempo_total) {
-				motor1.pos_objetivo = motor1.pos_final
+				motor1.pos_objetivo = (motor1.pos_final
 						- motor1.acel_nes
 								* pow(motor1.tiempo_total - motor1.tiemp_act, 2)
-								/ 2;
+								/ 2) * 600 / 2 / M_PI + 800;
 			}
-			motor1.pos_objetivo *= 600 / 2 / M_PI;
 			error_M = (motor1.pos_objetivo - motor1.pos_actual);
 		} else {
 			error_M = (int) (motor1.pos_objetivo - motor1.pos_actual);
@@ -449,7 +457,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			}
 			if (cnt_lis == 255) {
 				HAL_TIM_Base_Stop_IT(&htim9);
-				motor1.pos_inicial = motor1.pos_objetivo * 2 * M_PI / 600;
+				motor1.pos_inicial = (motor1.pos_objetivo - 800) * 2 * M_PI
+						/ 600;
 				PWM_config.Pulse = 0;
 				HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config, TIM_CHANNEL_1);
 				HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
@@ -476,22 +485,51 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			}
 			PWM_config.Pulse = 2799 - UPID;
 			HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config, TIM_CHANNEL_1);
+			HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
+					GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_SET);
 			HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+			HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin, GPIO_PIN_SET);
 		} else {
 			UPID -= 400;
 			//UPID -= 475;
 			if (UPID < -2799) {
 				UPID = -2799;
 			}
-			HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
 			PWM_config.Pulse = -UPID;
+
 			HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config, TIM_CHANNEL_1);
+			HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
+					GPIO_PIN_RESET);
+			HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
 			HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+			HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin, GPIO_PIN_SET);
 		}
 
 	}
 	if (htim->Instance == TIM12) {
+	}
+}
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
+	switch (GPIO_Pin) {
+	case h1_inter_Pin:
+		PWM_config.Pulse = 2799 - 1499;
+		HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config, TIM_CHANNEL_1);
+		HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_SET);
+		HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+		while (HAL_GPIO_ReadPin(h1_inter_GPIO_Port, h1_inter_Pin)) {
+
+		}
+		PWM_config.Pulse = 0;
+		HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config, TIM_CHANNEL_1);
+		HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
+		HAL_TIM_PWM_Stop(&htim12, TIM_CHANNEL_1);
+		htim1.Instance->CNT = 500;
+		motor1.pos_inicial = -M_PI;
+		flag_homing = 1;
+		break;
+	case h2_inter_Pin:
+		break;
 	}
 }
 /* USER CODE END 4 */
