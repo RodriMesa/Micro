@@ -47,8 +47,9 @@
 /* Private variables ---------------------------------------------------------*/
 
 /* USER CODE BEGIN PV */
-uint8_t dato_recepcion_SPI, pTxData = 0;
-volatile int cont_datos_SPI = 0, flag_mensaje_completo = 3, contador_instrucciones=0;
+uint8_t dato_recepcion_USB, pTxData = 0;
+volatile int cont = 0, flag = 0, flag1 = 0, flag2 = 0;
+volatile long contador1=0,contador2=0;
 char str[50] = { 0 };
 /* USER CODE END PV */
 
@@ -71,6 +72,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 	// Declarar variables
 	int cant = 0, flag_activacion, flag_homing;
+	//char str[50] = { 0 };
 	double instrucciones[50] = { };
 	enum Estado {
 		Activado, Desactivado, Modo_Homing, Modo_Normal, Error
@@ -107,22 +109,30 @@ int main(void)
   MX_TIM12_Init();
   MX_SPI2_Init();
   /* USER CODE BEGIN 2 */
-	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
+  HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_USB, 1);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 	while (1) {
+		// Hace el string
+		//if (flag) {
+			//str[cont - 1] = dato;
+			//flag = 0;
+			//flag1 = 0;
+			//HAL_SPI_Receive_IT(&hspi2, &dato, 1);
+	//	}
 		//Generar comando
-		if (flag_mensaje_completo == 0) {
-			cant = identificador(str, instrucciones, contador_instrucciones);
-			flag_mensaje_completo = 1;
-			contador_instrucciones=0;
+		if (str[cont - 1] == ':' && flag1 == 0) {
+			//cant = identificador(str, instrucciones, cont);
+			//flag1 = 1;
 		}
 		// identificar comandos
-		if (flag_mensaje_completo == 1) {
+
+		if (flag1 == 1) {
 			for (int i = 0; i < cant; i++) {
 				comando = (int) instrucciones[i];
+				//fprintf(&uart_io,"%d",comando);
 				switch (comando) {
 				case Desactivar:
 					if (flag_activacion) {
@@ -159,9 +169,7 @@ int main(void)
 						// saca vel media con consigna, la pos actual y tiempo
 						//calcula el duty cycle segun la vel
 						//calcula la cantidad de pulsos del enconder para llegar a esta pos
-						//aca se hace la interpolacion
 						estado = Modo_Normal;
-						i+=5;
 					}
 					break;
 				case error:
@@ -176,69 +184,47 @@ int main(void)
 					if (estado == Desactivado) {
 						pTxData = 'D';
 						HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+						//hspi2.pTxBuffPtr = (uint8_t*) pTxData;
+
 					} else if (estado == Activado) {
-						pTxData = 'A';
-						HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+						//pTxData = 'A';
+						//hspi2.pTxBuffPtr = (uint8_t*) pTxData;
+
 					} else if (estado == Modo_Homing) {
-						pTxData = 'H';
-						HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+						//pTxData = 'H';
+						//hspi2.pTxBuffPtr = (uint8_t*) pTxData;
+
 					} else if (estado == Modo_Normal) {
-						pTxData = 'N';
-						HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+						//pTxData = 'N';
+						//hspi2.pTxBuffPtr = (uint8_t*) pTxData;
+
 					} else if (estado == Error) {
-						pTxData = 'E';
-						HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+						//pTxData = 'E';
+						//hspi2.pTxBuffPtr = (uint8_t*) pTxData;
+
 					}
-					HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin, GPIO_PIN_SET);
-					HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin, GPIO_PIN_RESET);
+					HAL_GPIO_WritePin(GPIOC, out1_Pin, GPIO_PIN_SET);
+					HAL_GPIO_WritePin(GPIOC, out1_Pin, GPIO_PIN_RESET);
 					__HAL_SPI_CLEAR_OVRFLAG(&hspi2);
-					HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
+					HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_USB,1);
 					break;
 				case Estados:
 					//Revisa el estado, interuumpe y guarada el estado en el puerto SP
 					break;
 				}
-
+				flag1 = 2;
 			}
-			flag_mensaje_completo = 2;
-			cant=0;
 		}
-
 		switch (estado) {
-		//en la maquina de estado hace la gestion de cada motor los cuales sus datos estan guardados en un struk
 		case Desactivado:
-			//bajar pines de dir motores
-			//desactivar pwm
-			//resetear todos los vectores de motores
-			//tener que volver a activar y hacer homming
-			//apagar timer
-			//bajar tension en todos lados lo primero
 			break;
 		case Activado:
-			//energisar l298
-			//
-			//
-			//
-			//
 			break;
 		case Modo_Homing:
-			//caragar pwm modo homming
-			//sensar el final de carrera
-			//cambiar la dirreccion
-			//cambiar el pwm a algo muy lento
-			//mover muy lento
-			//colocar el contador del encoder 0
 			break;
 		case Modo_Normal:
-			//avisar que estoy listo
-			//activar los pwm con el
-			//control de pocicion y lectura de encoder
-			//manifulacion del efector final
 			break;
 		case Error:
-			// desactivar l298
-			//entra en modo error
-			//solo podria salir con un reseteo manuaal
 			break;
 		}
 
@@ -294,14 +280,23 @@ void SystemClock_Config(void)
 
 /* USER CODE BEGIN 4 */
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
-	cont_datos_SPI++;
-	str[cont_datos_SPI - 1] = dato_recepcion_SPI;
-	if (str[cont_datos_SPI - 1] == ':') {
-		flag_mensaje_completo = 0;
-		contador_instrucciones=cont_datos_SPI;
-		cont_datos_SPI = 0;
+	cont++;
+	//flag = 1;
+	if (dato_recepcion_USB==':')
+	{
+		contador1++;
 	}
-	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
+	if(dato_recepcion_USB=='A')
+	{
+		contador2++;
+	}
+	str[cont - 1] = dato_recepcion_USB;
+	if(str[cont - 1]==':'){
+		flag1 = 0;
+		cont=0;
+	}
+	//flag = 0;
+	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_USB, 1);
 
 }
 /* USER CODE END 4 */

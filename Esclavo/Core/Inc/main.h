@@ -62,8 +62,8 @@ void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi);
 #define dir2_GPIO_Port GPIOE
 #define out2_Pin GPIO_PIN_8
 #define out2_GPIO_Port GPIOC
-#define int1_M_cpt_t_Pin GPIO_PIN_9
-#define int1_M_cpt_t_GPIO_Port GPIOC
+#define out1_Pin GPIO_PIN_9
+#define out1_GPIO_Port GPIOC
 #define dir1_Pin GPIO_PIN_1
 #define dir1_GPIO_Port GPIOE
 /* USER CODE BEGIN Private defines */
