@@ -32,13 +32,16 @@ default.size.stdout \
 OBJDUMP_LIST += \
 Esclavo.list \
 
+OBJCOPY_BIN += \
+Esclavo.bin \
+
 
 # All Target
 all: Esclavo.elf secondary-outputs
 
 # Tool invocations
-Esclavo.elf: $(OBJS) $(USER_OBJS) C:\Users\rodry\Documents\GitHub\Micro\Esclavo\STM32F407VGTX_FLASH.ld
-	arm-none-eabi-gcc -o "Esclavo.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\rodry\Documents\GitHub\Micro\Esclavo\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Esclavo.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
+Esclavo.elf: $(OBJS) $(USER_OBJS) C:\Users\Rodri\Desktop\Workspace\Esclavo\STM32F407VGTX_FLASH.ld
+	arm-none-eabi-gcc -o "Esclavo.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Rodri\Desktop\Workspace\Esclavo\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Esclavo.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
@@ -52,12 +55,17 @@ Esclavo.list: $(EXECUTABLES)
 	@echo 'Finished building: $@'
 	@echo ' '
 
+Esclavo.bin: $(EXECUTABLES)
+	arm-none-eabi-objcopy  -O binary $(EXECUTABLES) "Esclavo.bin"
+	@echo 'Finished building: $@'
+	@echo ' '
+
 # Other Targets
 clean:
 	-$(RM) *
 	-@echo ' '
 
-secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST)
+secondary-outputs: $(SIZE_OUTPUT) $(OBJDUMP_LIST) $(OBJCOPY_BIN)
 
 .PHONY: all clean dependents
 .SECONDARY:

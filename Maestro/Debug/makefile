@@ -44,8 +44,8 @@ Maestro.bin \
 all: Maestro.elf secondary-outputs
 
 # Tool invocations
-Maestro.elf: $(OBJS) $(USER_OBJS) C:\Users\Rodri\Documents\GitHub\Micro\Maestro\STM32F407VGTX_FLASH.ld
-	arm-none-eabi-gcc -o "Maestro.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Rodri\Documents\GitHub\Micro\Maestro\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Maestro.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
+Maestro.elf: $(OBJS) $(USER_OBJS) C:\Users\Rodri\Desktop\Workspace\Maestro\STM32F407VGTX_FLASH.ld
+	arm-none-eabi-gcc -o "Maestro.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Rodri\Desktop\Workspace\Maestro\STM32F407VGTX_FLASH.ld" --specs=nosys.specs -Wl,-Map="Maestro.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -u _printf_float -Wl,--start-group -lc -lm -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 

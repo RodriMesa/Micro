@@ -1,6 +1,0 @@
-funciones.c:8:6:Leds_Desactivado	8	static
-funciones.c:18:6:Leds_Activado	8	static
-funciones.c:29:6:Leds_Homing	8	static
-funciones.c:39:6:Leds_Normal	8	static
-funciones.c:49:6:Leds_Error	8	static
-funciones.c:59:6:Cin_Dir	48	static
