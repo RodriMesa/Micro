@@ -191,7 +191,7 @@ int main(void) {
 							i--;
 						}
 					}
-					i += 5;
+					i += 6;
 					break;
 				case Cin_inv:
 					i += 5;
