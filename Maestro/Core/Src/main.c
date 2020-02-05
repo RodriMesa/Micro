@@ -49,12 +49,20 @@
 /* USER CODE BEGIN PV */
 extern int contador_instrucciones;
 extern char str[50];
-extern int flag_mensaje_completo;
-volatile int flag_INT = 1;
-uint8_t pRxData = 'K';
-enum Estado {
+extern uint8_t flag_mensaje_completo;
+volatile uint8_t flag_INT = 1;
+uint8_t pRxData, dato_P = 'K';
+enum Estado_MDE {
 	Activado, Desactivado, Modo_Homing, Modo_Normal, Error
 };
+enum Modos {
+	M_error, M_listo, M_realizando
+};
+typedef struct estado_esclavos {
+	enum Modos esclavo_1;
+	enum Modos esclavo_2;
+} Estado_Esclavos;
+Estado_Esclavos controlador;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -75,12 +83,13 @@ int main(void) {
 	int cant = 0;
 	double instrucciones[50];
 	//Flags
-	int flag_activacion = 0;
-	int flag_homing = 0, flag_cambio = 0;
+	uint8_t flag_activacion = 0;
+	uint8_t flag_homing = 0, flag_cambio = 0;
 	//Variables enum
-	enum Estado estado = Desactivado;
-	//HAL_StatusTypeDef SPI_estado;
+	enum Estado_MDE estado = Desactivado;
 	int comando;
+	controlador.esclavo_1 = M_listo;
+	controlador.esclavo_2 = M_listo;
 	/* USER CODE END 1 */
 
 	/* MCU Configuration--------------------------------------------------------*/
@@ -104,11 +113,12 @@ int main(void) {
 	MX_USB_DEVICE_Init();
 	MX_SPI2_Init();
 	/* USER CODE BEGIN 2 */
-	SPI_Transmit_1('D');
-	SPI_Transmit_1('/');
-	SPI_Transmit_1('P');
+	/*	SPI_Transmit_1('D');
+	 SPI_Transmit_1('/');
+	 SPI_Transmit_1('P');*/
 	SPI_Transmit_1(':');
-	Mi_Timer();
+	/*controlador.esclavo_1 = M_realizando;
+	 Mi_Timer();*/
 	/* USER CODE END 2 */
 
 	/* Infinite loop */
@@ -124,6 +134,10 @@ int main(void) {
 		//Identificar comandos
 		if (flag_mensaje_completo == 1) {
 			for (int i = 0; i < cant; i++) {
+				while (controlador.esclavo_1 == M_realizando
+						|| controlador.esclavo_2 == M_realizando)
+
+					;
 				comando = (int) instrucciones[i];
 				switch (comando) {
 				case Modo_desactivado:
@@ -133,12 +147,14 @@ int main(void) {
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
 						Mi_Timer();
-						if (pRxData == 'D') {
+						if (dato_P == 'D') {
 							estado = Desactivado;
 							flag_activacion = 0;
 							flag_homing = 0;
 							flag_cambio = 1;
-
+						} else if (dato_P == 'E') {
+							estado = Error;
+							i = cant;
 						} else {
 							i--;
 						}
@@ -151,10 +167,13 @@ int main(void) {
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
 						Mi_Timer();
-						if (pRxData == 'A') {
+						if (dato_P == 'A') {
 							estado = Activado;
 							flag_activacion = 1;
 							flag_cambio = 1;
+						} else if (dato_P == 'E') {
+							estado = Error;
+							i = cant;
 						} else {
 							i--;
 						}
@@ -164,16 +183,21 @@ int main(void) {
 					if (flag_activacion) {
 						//Prender un LED
 						//Mandar consigna de homing
+						controlador.esclavo_1 = M_realizando;
 						SPI_Transmit_1('H');
 						SPI_Transmit_1('/');
 						//Verificar consigna
 						SPI_Transmit_1('P');
 						SPI_Transmit_1(':');
 						Mi_Timer();
-						if (pRxData == 'H') {
+						if (dato_P == 'H') {
+							Leds_Homing();
 							estado = Modo_Homing;
 							flag_homing = 1;
 							flag_cambio = 1;
+						} else if (dato_P == 'E') {
+							estado = Error;
+							i = cant;
 						} else {
 							i--;
 						}
@@ -181,17 +205,22 @@ int main(void) {
 					break;
 				case Cin_dir:
 					if (flag_activacion && flag_homing) {
+						controlador.esclavo_1 = M_realizando;
 						Cin_Dir(instrucciones, i);
 						Mi_Timer();
 						//Verificar que se logre
-						if (pRxData == 'N') {
+						if (dato_P == 'N') {
+							Leds_Normal();
 							estado = Modo_Normal;
 							flag_cambio = 1;
+						} else if (dato_P == 'E') {
+							estado = Error;
+							i = cant;
 						} else {
 							i--;
 						}
 					}
-					i += 6;
+					i += 5;
 					break;
 				case Cin_inv:
 					i += 5;
@@ -199,50 +228,55 @@ int main(void) {
 				case Resumen:
 					break;
 				}
-				pRxData = 'K';
+				dato_P = 'K';
 			}
 			flag_mensaje_completo = 2;
 			cant = 0;
 		}
-		switch (estado) {
-		case Activado:
-			if (flag_cambio) {
-				Leds_Activado();
-				flag_cambio = 0;
+		if (controlador.esclavo_1 == M_listo
+				&& controlador.esclavo_2 == M_listo) {
+			switch (estado) {
+			case Activado:
+				if (flag_cambio) {
+					Leds_Activado();
+					flag_cambio = 0;
+				}
+				break;
+			case Desactivado:
+				if (flag_cambio) {
+					//Prender LED
+					Leds_Desactivado();
+					flag_cambio = 0;
+				}
+				break;
+			case Modo_Homing:
+				if (flag_cambio) {
+					//Prender LED
+					HAL_GPIO_WritePin(Led_Homing_GPIO_Port, Led_Homing_Pin,
+							GPIO_PIN_RESET);
+					flag_cambio = 0;
+				}
+				break;
+			case Modo_Normal:
+				if (flag_cambio) {
+					//Prender LED
+					HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin,
+							GPIO_PIN_RESET);
+					flag_cambio = 0;
+				}
+				break;
+			case Error:
+				//	Leds_Error();
+				break;
 			}
-			break;
-		case Desactivado:
-			if (flag_cambio) {
-				//Prender LED
-				Leds_Desactivado();
-				flag_cambio = 0;
-			}
-			break;
-		case Modo_Homing:
-			if (flag_cambio) {
-				//Prender LED
-				Leds_Homing();
-				flag_cambio = 0;
-			}
-			break;
-		case Modo_Normal:
-			if (flag_cambio) {
-				//Prender LED
-				Leds_Normal();
-				flag_cambio = 0;
-			}
-			break;
-		case Error:
-			Leds_Error();
-			break;
 		}
+
 		/* USER CODE END WHILE */
 
 		/* USER CODE BEGIN 3 */
 	}
 	/* USER CODE END 3 */
 }
-
 /**
  * @brief System Clock Configuration
  * @retval None
@@ -297,11 +331,12 @@ void SPI_Transmit_1(uint8_t pTxData) {
 }
 void SPI_Transmit_2(uint8_t pTxData) {
 
-	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET); //PIN NSS Esclavo 2 Bajo
-	//HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
-	//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);	//PIN NSS Esclavo 2 Alto
+//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET); //PIN NSS Esclavo 2 Bajo
+//HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+//HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);	//PIN NSS Esclavo 2 Alto
 }
 void Mi_Timer() {
+	flag_INT = 1;
 	/*	long contador = 0;
 	 flag_INT = 1;
 	 switch (estado) {
@@ -337,15 +372,35 @@ void Mi_Timer() {
 
 }
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
-	static uint8_t D_transmision = ':';
-	flag_INT = 0;
+	static uint8_t D_transmision = '\0';
 	switch (GPIO_Pin) {
 	case GPIO_PIN_8: 	//INT 1 Esclavo 1 (2 motores)
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
 		HAL_SPI_TransmitReceive(&hspi2, &D_transmision, &pRxData, 1, 1);
 		HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+		if (pRxData == 'E') {
+			SPI_Transmit_2('E');
+			SPI_Transmit_2(':');
+			flag_INT = 0;
+			dato_P = 'E';
+			controlador.esclavo_1 = M_error;
+			Error_Handler();
+		} else if (pRxData == 'L') {
+			controlador.esclavo_1 = M_listo;
+		} else {
+			flag_INT = 0;
+			dato_P = pRxData;
+		}
 		break;
 	case GPIO_PIN_9: 	//INT2 Esclavo 2
+		/*
+		 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_RESET);
+		 HAL_SPI_TransmitReceive(&hspi2, &D_transmision, &pRxData, 1, 1);
+		 HAL_GPIO_WritePin(GPIOC, GPIO_PIN_6, GPIO_PIN_SET);
+		 if(pRxData=='E'){
+		 SPI_Transmit_1('E');
+		 SPI_Transmit_1(':');
+		 }*/
 		break;
 	}
 
@@ -358,6 +413,9 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
  */
 void Error_Handler(void) {
 	/* USER CODE BEGIN Error_Handler_Debug */
+	Leds_Error();
+	while (1)
+		;
 	/* User can add his own implementation to report the HAL error return state */
 
 	/* USER CODE END Error_Handler_Debug */
