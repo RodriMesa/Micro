@@ -28,7 +28,7 @@ void Leds_Activado() {
 }
 void Leds_Homing() {
 	HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin,
 			GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(Led_Normal_GPIO_Port, Led_Normal_Pin, GPIO_PIN_RESET);
@@ -38,7 +38,7 @@ void Leds_Homing() {
 }
 void Leds_Normal() {
 	HAL_GPIO_WritePin(Led_Error_GPIO_Port, Led_Error_Pin, GPIO_PIN_RESET);
-	HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(Led_Activado_GPIO_Port, Led_Activado_Pin, GPIO_PIN_SET);
 	HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin,
 			GPIO_PIN_RESET);
 	HAL_GPIO_WritePin(Led_Desactivado_GPIO_Port, Led_Desactivado_Pin,
