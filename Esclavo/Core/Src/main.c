@@ -52,30 +52,35 @@
 enum Estado {
 	Activado, Desactivado, Modo_Homing, Modo_Normal, Error
 };
+typedef enum {
+	M_error, M_listo, M_realizando
+} Modos;
 typedef struct {
-	float pos_objetivo;
-	float pos_actual;
-	float pos_final;
-	float pos_inicial;
-	float velocidad_crucero;
-	long cantidad_puntos;
+	float p_obj;
+	float p_act;
+	float p_fin;
+	float p_ini;
+	float v_cru;
 	float tau;
-	float acel_nes;
-	float tiempo_total;
-	float tiemp_act;
+	float a_nes;
+	float t_tot;
+	float t_act;
 	float kp, ki, kd;
+	Modos modo;
 } motor;
-motor motor1, motor2;
+
+motor m1, m2;
+enum Estado estado = Desactivado;
 uint8_t dato_recepcion_SPI, pTxData = 0, cnt_lis;
-volatile int cont_datos_SPI = 0, flag_mensaje_completo = 3,
-		contador_instrucciones = 0, flag_configuracion_PWM = 1, flag_cambio = 0,
-		dir, cant_pun_tot, cant_vueltas_mot1 = 0, flag_encoder = 0,
-		contador = 0, flag_activacion = 0, flag_homing = 0;
-;
+uint8_t flag_mensaje_completo = 3, flag_cambio = 0, flag_cambio2 = 0,
+		flag_activacion = 0, flag_homing = 0, flag_m1_listo = 0, flag_m2_listo =
+				1;
+uint32_t cont_samp = 0, cont_error = 0;
+volatile int cont_datos_SPI = 0, contador_instrucciones = 0;
 char str[50] = { 0 };
-float error_M, error_ant_M = 0, Ui = 0, Ui_ant = 0, Up, Ud, UPID, derivada;
+float error_M, error_ant_M = 0, Ui = 0, Ui_ant = 0, Up, Ud, UPID;
 double error_pos = 0;
-uint32_t valor_PWM, cont_samp = 0, CNT_ant;
+
 TIM_OC_InitTypeDef PWM_config = { 0 };
 //Seteo de kp,ki,kd;
 /* USER CODE END PV */
@@ -91,59 +96,65 @@ void SystemClock_Config(void);
 /* USER CODE END 0 */
 
 /**
- * @brief  The application entry point.
- * @retval int
- */
-int main(void) {
-	/* USER CODE BEGIN 1 */
+  * @brief  The application entry point.
+  * @retval int
+  */
+int main(void)
+{
+  /* USER CODE BEGIN 1 */
 	// Declarar variables
 	int cant = 0;
 	double instrucciones[50] = { };
-	motor1.pos_inicial = 0;
+
+	int comando;
+	float Vmin;
+
+	// init variables
+	m1.p_ini = 0;
 	PWM_config.OCMode = TIM_OCMODE_PWM1;
 	PWM_config.Pulse = 0;
 	PWM_config.OCPolarity = TIM_OCPOLARITY_HIGH;
 	PWM_config.OCFastMode = TIM_OCFAST_DISABLE;
-	// init variables
-	enum Estado estado = Desactivado;
-	int comando;
 	flag_activacion = 0;
 	flag_homing = 0;
-	motor1.kp = 280;
-	motor1.kd = motor1.kp / 3896.96;
-	motor1.ki = motor1.kp * 4.818;
-	float Vmin;
-	/* USER CODE END 1 */
+	m1.kp = 280;
+	m1.kd = m1.kp / 3896.96;
+	m1.ki = m1.kp * 4.818;
+	m2.modo = M_listo;
+	m1.modo = M_listo;
 
-	/* MCU Configuration--------------------------------------------------------*/
+  /* USER CODE END 1 */
+  
 
-	/* Reset of all peripherals, Initializes the Flash interface and the Systick. */
-	HAL_Init();
+  /* MCU Configuration--------------------------------------------------------*/
 
-	/* USER CODE BEGIN Init */
+  /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
+  HAL_Init();
 
-	/* USER CODE END Init */
+  /* USER CODE BEGIN Init */
 
-	/* Configure the system clock */
-	SystemClock_Config();
+  /* USER CODE END Init */
 
-	/* USER CODE BEGIN SysInit */
+  /* Configure the system clock */
+  SystemClock_Config();
 
-	/* USER CODE END SysInit */
+  /* USER CODE BEGIN SysInit */
 
-	/* Initialize all configured peripherals */
-	MX_GPIO_Init();
-	MX_TIM1_Init();
-	MX_TIM3_Init();
-	MX_TIM9_Init();
-	MX_TIM12_Init();
-	MX_SPI2_Init();
-	/* USER CODE BEGIN 2 */
+  /* USER CODE END SysInit */
+
+  /* Initialize all configured peripherals */
+  MX_GPIO_Init();
+  MX_TIM1_Init();
+  MX_TIM3_Init();
+  MX_TIM9_Init();
+  MX_TIM12_Init();
+  MX_SPI2_Init();
+  /* USER CODE BEGIN 2 */
 	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
-	/* USER CODE END 2 */
+  /* USER CODE END 2 */
 
-	/* Infinite loop */
-	/* USER CODE BEGIN WHILE */
+  /* Infinite loop */
+  /* USER CODE BEGIN WHILE */
 	while (1) {
 		//Generar comando
 		if (flag_mensaje_completo == 0) {
@@ -157,9 +168,7 @@ int main(void) {
 				comando = (int) instrucciones[i];
 				switch (comando) {
 				case Desactivar:
-					if (flag_activacion) {
-						//desactivar PWM baja el pin del motor
-						//Comunica que desactivo Interrumpe
+					//if (flag_activacion) {
 						HAL_TIM_Base_Stop_IT(&htim9);
 						HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
 								GPIO_PIN_RESET);
@@ -175,17 +184,11 @@ int main(void) {
 						flag_homing = 0;
 						flag_cambio = 1;
 
-					} else {
-					}
+					//} else {
+					//}
 					break;
 				case Activar:
 					if (!flag_activacion) {
-						//Comunica que se activo interrumpe
-						//inicializa PWM FRECUENCIA 1 KHZ PWM1 Resolución 7.4 e-4 volts por paso 16000 pasos hasta TOP
-						//configurar_prescaler_TIMER1(1000);
-						//inicializa PWM FRECUENCIA 1 KHZ PWM2 Resolución 0.048volts por paso 249 pasos hasta TOP
-						//configurar_prescaler_TIMER2(1000);
-						//seteamos pwms
 						estado = Activado;
 						flag_activacion = 1;
 						flag_cambio = 1;
@@ -197,27 +200,18 @@ int main(void) {
 					break;
 				case Modo_homing:
 					if (flag_activacion) {
-						//Realizar homming:configurar PWM a vel baja:
-						//simular un fin de carrera con un pull y una interrupcion
-
 						flag_cambio = 1;
 						estado = Modo_Homing;
 					}
 					break;
 				case Modo_ir:
 					if (flag_activacion && flag_homing) {
-						// saca vel media con consigna, la pos actual y tiempo
-						//calcula el duty cycle segun la vel
-						//calcula la cantidad de pulsos del enconder para llegar a esta pos
-						//aca se hace la interpolacion
 						cont_samp = 0;
-						motor1.pos_final = instrucciones[i + 1];
-						error_pos = (motor1.pos_final - motor1.pos_inicial)
-								/ motor1.pos_inicial * 100;
+						m1.p_fin = instrucciones[i + 1];
+						error_pos = (m1.p_fin - m1.p_ini) / m1.p_ini * 100;
 						if (fabs(error_pos) > 0.001) {
-							motor1.tiempo_total = instrucciones[i + 3];
-							Vmin = fabs(motor1.pos_final - motor1.pos_inicial)
-									/ motor1.tiempo_total;
+							m1.t_tot = instrucciones[i + 3];
+							Vmin = fabs(m1.p_fin - m1.p_ini) / m1.t_tot;
 							if (VEL_MAX < Vmin) {
 								estado = Error;
 								i += 3;
@@ -226,22 +220,20 @@ int main(void) {
 								__NOP();
 
 							} else if (VEL_MAX > (2 * Vmin)) {
-								motor1.velocidad_crucero = 1.5 * Vmin;
+								m1.v_cru = 1.5 * Vmin;
 							} else if (VEL_MAX > Vmin
 									&& VEL_MAX <= (2 * Vmin)) {
-								motor1.velocidad_crucero = VEL_MAX;
+								m1.v_cru = VEL_MAX;
 							}
-							if ((motor1.pos_final - motor1.pos_inicial) < 0) {
-								motor1.velocidad_crucero *= -1;
+							if ((m1.p_fin - m1.p_ini) < 0) {
+								m1.v_cru *= -1;
 							}
-							motor1.tau = (motor1.pos_inicial - motor1.pos_final
-									+ motor1.velocidad_crucero
-											* motor1.tiempo_total)
-									/ motor1.velocidad_crucero;
-							motor1.acel_nes = pow(motor1.velocidad_crucero, 2)
-									/ (motor1.pos_inicial - motor1.pos_final
-											+ motor1.velocidad_crucero
-													* motor1.tiempo_total);
+							m1.tau = (m1.p_ini - m1.p_fin + m1.v_cru * m1.t_tot)
+									/ m1.v_cru;
+							m1.a_nes =
+									pow(m1.v_cru, 2)
+											/ (m1.p_ini - m1.p_fin
+													+ m1.v_cru * m1.t_tot);
 
 							flag_cambio = 1;
 						}
@@ -252,8 +244,9 @@ int main(void) {
 				case error:
 					//apagar todo
 					flag_homing = 0;
-					estado = Desactivado;
+					estado = Error;
 					flag_activacion = 0;
+					flag_cambio = 1;
 					break;
 				case Preguntar:
 					HAL_SPI_Abort_IT(&hspi2);
@@ -295,48 +288,42 @@ int main(void) {
 		//en la maquina de estado hace la gestion de cada motor los cuales sus datos estan guardados en un struk
 		case Desactivado:
 			if (flag_cambio == 1) {
-
 				flag_cambio = 0;
 			}
-			//bajar pines de dir motores
-			//desactivar pwm
-			//tener que volver a activar y hacer homming
-			//apagar timer
-			//bajar tension en todos lados lo primero
 			break;
 		case Activado:
-			//energisar l298
 			if (flag_cambio == 1) {
 				HAL_TIM_Encoder_Start(&htim1, TIM_CHANNEL_ALL);
 				flag_cambio = 0;
 			}
-			//
-			//
-			//
 			break;
 		case Modo_Homing:
 			if (flag_cambio == 1) {
+				m1.modo = M_realizando;
 				HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
 				PWM_config.Pulse = 1200;
 				HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,
 				TIM_CHANNEL_1);
 				HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
 				flag_cambio = 0;
-				motor1.pos_inicial = 0;
+				m1.p_ini = 0;
 			}
-			//caragar pwm modo homming
-			//sensar el final de carrera
-			//cambiar la dirreccion
-			//cambiar el pwm a algo muy lento
-			//mover muy lento
-			//colocar el contador del encoder 0
+			if (m1.modo == M_listo && m2.modo == M_listo && flag_cambio2) {
+				flag_cambio2 = 0;
+				HAL_SPI_Abort_IT(&hspi2);
+				pTxData = 'L';
+				HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+				HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin,
+						GPIO_PIN_SET);
+				HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin,
+						GPIO_PIN_RESET);
+				__HAL_SPI_CLEAR_OVRFLAG(&hspi2);
+				HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
+			}
 			break;
 		case Modo_Normal:
-			//avisar que estoy listo
-			//activar los pwm con el
-			//control de pocicion y lectura de encoder
-			//manifulacion del efector final
 			if (flag_cambio == 1) {
+				m1.modo = M_realizando;
 				Up = 0;
 				UPID = 0;
 				Ui = 0;
@@ -347,71 +334,89 @@ int main(void) {
 				HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
 						GPIO_PIN_RESET);
 				HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
+				PWM_config.Pulse = 0;
+				HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config, TIM_CHANNEL_1);
 				HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
 				HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin,
 						GPIO_PIN_SET);
 				HAL_TIM_Base_Start_IT(&htim9);
 				flag_cambio = 0;
 			}
+			if (m1.modo == M_listo && m2.modo == M_listo && flag_cambio2) {
+				flag_cambio2 = 0;
+				HAL_SPI_Abort_IT(&hspi2);
+				pTxData = 'L';
+				HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+				HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin,
+						GPIO_PIN_SET);
+				HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin,
+						GPIO_PIN_RESET);
+				__HAL_SPI_CLEAR_OVRFLAG(&hspi2);
+				HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
+			}
 			break;
 		case Error:
-			// desactivar l298
-			//entra en modo error
-			//solo podria salir con un reseteo manuaal
+			Error_Handler();
 			break;
 		}
 
-		/* USER CODE END WHILE */
+    /* USER CODE END WHILE */
 
-		/* USER CODE BEGIN 3 */
+    /* USER CODE BEGIN 3 */
 	}
-	/* USER CODE END 3 */
+  /* USER CODE END 3 */
 }
 
 /**
- * @brief System Clock Configuration
- * @retval None
- */
-void SystemClock_Config(void) {
-	RCC_OscInitTypeDef RCC_OscInitStruct = { 0 };
-	RCC_ClkInitTypeDef RCC_ClkInitStruct = { 0 };
+  * @brief System Clock Configuration
+  * @retval None
+  */
+void SystemClock_Config(void)
+{
+  RCC_OscInitTypeDef RCC_OscInitStruct = {0};
+  RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
 
-	/** Configure the main internal regulator output voltage
-	 */
-	__HAL_RCC_PWR_CLK_ENABLE();
-	__HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
-	/** Initializes the CPU, AHB and APB busses clocks
-	 */
-	RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
-	RCC_OscInitStruct.HSIState = RCC_HSI_ON;
-	RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
-	RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
-	RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
-	RCC_OscInitStruct.PLL.PLLM = 8;
-	RCC_OscInitStruct.PLL.PLLN = 168;
-	RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
-	RCC_OscInitStruct.PLL.PLLQ = 7;
-	if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK) {
-		Error_Handler();
-	}
-	/** Initializes the CPU, AHB and APB busses clocks
-	 */
-	RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK | RCC_CLOCKTYPE_SYSCLK
-			| RCC_CLOCKTYPE_PCLK1 | RCC_CLOCKTYPE_PCLK2;
-	RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
-	RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
-	RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
-	RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
+  /** Configure the main internal regulator output voltage 
+  */
+  __HAL_RCC_PWR_CLK_ENABLE();
+  __HAL_PWR_VOLTAGESCALING_CONFIG(PWR_REGULATOR_VOLTAGE_SCALE1);
+  /** Initializes the CPU, AHB and APB busses clocks 
+  */
+  RCC_OscInitStruct.OscillatorType = RCC_OSCILLATORTYPE_HSI;
+  RCC_OscInitStruct.HSIState = RCC_HSI_ON;
+  RCC_OscInitStruct.HSICalibrationValue = RCC_HSICALIBRATION_DEFAULT;
+  RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
+  RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSI;
+  RCC_OscInitStruct.PLL.PLLM = 8;
+  RCC_OscInitStruct.PLL.PLLN = 168;
+  RCC_OscInitStruct.PLL.PLLP = RCC_PLLP_DIV2;
+  RCC_OscInitStruct.PLL.PLLQ = 7;
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /** Initializes the CPU, AHB and APB busses clocks 
+  */
+  RCC_ClkInitStruct.ClockType = RCC_CLOCKTYPE_HCLK|RCC_CLOCKTYPE_SYSCLK
+                              |RCC_CLOCKTYPE_PCLK1|RCC_CLOCKTYPE_PCLK2;
+  RCC_ClkInitStruct.SYSCLKSource = RCC_SYSCLKSOURCE_PLLCLK;
+  RCC_ClkInitStruct.AHBCLKDivider = RCC_SYSCLK_DIV1;
+  RCC_ClkInitStruct.APB1CLKDivider = RCC_HCLK_DIV8;
+  RCC_ClkInitStruct.APB2CLKDivider = RCC_HCLK_DIV8;
 
-	if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK) {
-		Error_Handler();
-	}
+  if (HAL_RCC_ClockConfig(&RCC_ClkInitStruct, FLASH_LATENCY_5) != HAL_OK)
+  {
+    Error_Handler();
+  }
 }
 
 /* USER CODE BEGIN 4 */
 void HAL_SPI_RxCpltCallback(SPI_HandleTypeDef *hspi) {
 	cont_datos_SPI++;
 	str[cont_datos_SPI - 1] = dato_recepcion_SPI;
+	if(str[cont_datos_SPI - 1]=='\0'){
+		cont_datos_SPI--;
+	}
 	if (str[cont_datos_SPI - 1] == ':') {
 		flag_mensaje_completo = 0;
 		contador_instrucciones = cont_datos_SPI;
@@ -428,57 +433,57 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	}
 	if (htim->Instance == TIM9) {
 		cont_samp++;
-		motor1.tiemp_act = TIEMPO_SAMP * cont_samp;
-		if (motor1.tiemp_act < motor1.tiempo_total) {
-			if (motor1.tiemp_act <= motor1.tau) {
-				motor1.pos_objetivo = (motor1.pos_inicial
-						+ motor1.acel_nes * pow(motor1.tiemp_act, 2) / 2) * 600
+		m1.t_act = TIEMPO_SAMP * cont_samp;
+		if (m1.t_act < m1.t_tot) {
+			if (m1.t_act <= m1.tau) {
+				m1.p_obj = (m1.p_ini + m1.a_nes * pow(m1.t_act, 2) / 2) * 600
 						/ 2 / M_PI + 800;
-			} else if (motor1.tiemp_act > motor1.tau
-					&& motor1.tiemp_act <= (motor1.tiempo_total - motor1.tau)) {
-				motor1.pos_objetivo = (motor1.pos_inicial
-						+ motor1.acel_nes * motor1.tau
-								* (motor1.tiemp_act - motor1.tau / 2)) * 600 / 2
+			} else if (m1.t_act > m1.tau && m1.t_act <= (m1.t_tot - m1.tau)) {
+				m1.p_obj = (m1.p_ini
+						+ m1.a_nes * m1.tau * (m1.t_act - m1.tau / 2)) * 600 / 2
 						/ M_PI + 800;
-			} else if (motor1.tiemp_act > (motor1.tiempo_total - motor1.tau)
-					&& motor1.tiemp_act < motor1.tiempo_total) {
-				motor1.pos_objetivo = (motor1.pos_final
-						- motor1.acel_nes
-								* pow(motor1.tiempo_total - motor1.tiemp_act, 2)
-								/ 2) * 600 / 2 / M_PI + 800;
+			} else if (m1.t_act > (m1.t_tot - m1.tau) && m1.t_act < m1.t_tot) {
+				m1.p_obj = (m1.p_fin
+						- m1.a_nes * pow(m1.t_tot - m1.t_act, 2) / 2) * 600 / 2
+						/ M_PI + 800;
 			}
-			error_M = (motor1.pos_objetivo - motor1.pos_actual);
+			error_M = (m1.p_obj - m1.p_act);
 		} else {
-			error_M = (int) (motor1.pos_objetivo - motor1.pos_actual);
+			error_M = (int) (m1.p_obj - m1.p_act);
 			if (!error_M) {
 				cnt_lis++;
 			} else {
 				cnt_lis = 0;
+				cont_error++;
 			}
-			if (cnt_lis == 255) {
+			if (cnt_lis == 15) {
 				HAL_TIM_Base_Stop_IT(&htim9);
-				motor1.pos_inicial = (motor1.pos_objetivo - 800) * 2 * M_PI
-						/ 600;
+				m1.p_ini = (m1.p_obj - 800) * 2 * M_PI / 600;
 				PWM_config.Pulse = 0;
 				HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config, TIM_CHANNEL_1);
 				HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
 				HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
+				m1.modo = M_listo;
+				flag_cambio2 = 1;
+				cont_error = 0;
+				cont_samp = 0;
 				return;
-
 			}
-			//motor1.pos_objetivo = motor1.pos_objetivo;
-			//motor1.pos_inicial=motor1.pos_objetivo;
+			if (cont_error > 100000) {
+				HAL_TIM_Base_Stop_IT(&htim9);
+				flag_cambio = 1;
+				estado = Error;
+				return;
+			}
 		}
-		motor1.pos_actual = TIM1->CNT;
-
-		Up = motor1.kp * error_M;
-		Ui = Ui_ant + motor1.ki * TIEMPO_SAMP * error_ant_M;
-		Ud = motor1.kd / TIEMPO_SAMP * (error_M - error_ant_M);
+		m1.p_act = TIM1->CNT;
+		Up = m1.kp * error_M;
+		Ui = Ui_ant + m1.ki * TIEMPO_SAMP * error_ant_M;
+		Ud = m1.kd / TIEMPO_SAMP * (error_M - error_ant_M);
 		UPID = Up + Ui + Ud;
 		Ui_ant = Ui;
 		error_ant_M = error_M;
 		if (UPID > 0) {
-			//UPID += 475;
 			UPID += 400;
 			if (UPID > 2799) {
 				UPID = 2799;
@@ -492,7 +497,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 			HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin, GPIO_PIN_SET);
 		} else {
 			UPID -= 400;
-			//UPID -= 475;
 			if (UPID < -2799) {
 				UPID = -2799;
 			}
@@ -513,7 +517,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	switch (GPIO_Pin) {
 	case h1_inter_Pin:
-		PWM_config.Pulse = 2799 - 1499;
+		PWM_config.Pulse = 2799 - 900;
 		HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config, TIM_CHANNEL_1);
 		HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_SET);
 		HAL_TIM_PWM_Start(&htim12, TIM_CHANNEL_1);
@@ -524,25 +528,55 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 		HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config, TIM_CHANNEL_1);
 		HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
 		HAL_TIM_PWM_Stop(&htim12, TIM_CHANNEL_1);
+		HAL_Delay(1);
 		htim1.Instance->CNT = 500;
-		motor1.pos_inicial = -M_PI;
+		m1.p_ini = -M_PI;
 		flag_homing = 1;
+		m1.modo = M_listo;
+		flag_cambio2 = 1;
 		break;
 	case h2_inter_Pin:
+		break;
+	case pin_error_Pin:
+		estado = Error;
 		break;
 	}
 }
 /* USER CODE END 4 */
 
 /**
- * @brief  This function is executed in case of error occurrence.
- * @retval None
- */
-void Error_Handler(void) {
-	/* USER CODE BEGIN Error_Handler_Debug */
+  * @brief  This function is executed in case of error occurrence.
+  * @retval None
+  */
+void Error_Handler(void)
+{
+  /* USER CODE BEGIN Error_Handler_Debug */
 	/* User can add his own implementation to report the HAL error return state */
-
-	/* USER CODE END Error_Handler_Debug */
+	HAL_NVIC_DisableIRQ(EXTI1_IRQn);
+	HAL_NVIC_DisableIRQ(EXTI2_IRQn);
+	HAL_TIM_Base_Stop_IT(&htim9);
+	HAL_GPIO_WritePin(L298_ENA1_GPIO_Port, L298_ENA1_Pin, GPIO_PIN_RESET);
+	PWM_config.Pulse = 0;
+	HAL_TIM_PWM_ConfigChannel(&htim12, &PWM_config,
+	TIM_CHANNEL_1);
+	HAL_GPIO_WritePin(dir1_GPIO_Port, dir1_Pin, GPIO_PIN_RESET);
+	HAL_TIM_PWM_Stop(&htim12, TIM_CHANNEL_ALL);
+	HAL_TIM_Encoder_Stop(&htim1, TIM_CHANNEL_ALL);
+	estado = Error;
+	flag_activacion = 0;
+	flag_homing = 0;
+	flag_cambio = 0;
+	HAL_SPI_Abort_IT(&hspi2);
+	pTxData = 'E';
+	HAL_SPI_Transmit_IT(&hspi2, &pTxData, 1);
+	HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin, GPIO_PIN_SET);
+	HAL_GPIO_WritePin(int1_M_cpt_t_GPIO_Port, int1_M_cpt_t_Pin, GPIO_PIN_RESET);
+	__HAL_SPI_CLEAR_OVRFLAG(&hspi2);
+	HAL_SPI_Receive_IT(&hspi2, &dato_recepcion_SPI, 1);
+	HAL_SPI_Abort_IT(&hspi2);
+	while (1)
+		;
+  /* USER CODE END Error_Handler_Debug */
 }
 
 #ifdef  USE_FULL_ASSERT
