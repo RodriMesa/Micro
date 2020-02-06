@@ -1,0 +1,110 @@
+Configuration	Esclavo
+STM32CubeMX 	5.4.0
+Date	02/05/2020
+MCU	STM32F407VGTx
+
+
+
+PERIPHERALS	MODES	FUNCTIONS	PINS
+SPI2	Full-Duplex Slave	SPI2_MISO	PC2
+SPI2	Full-Duplex Slave	SPI2_MOSI	PC3
+SPI2	Full-Duplex Slave	SPI2_SCK	PB10
+SPI2	Hardware NSS Input Signal	SPI2_NSS	PB12
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM1	Encoder Mode	TIM1_CH1	PE9
+TIM1	Encoder Mode	TIM1_CH2	PE11
+TIM3	Encoder Mode	TIM3_CH1	PC6
+TIM3	Encoder Mode	TIM3_CH2	PC7
+TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
+TIM9	Output Compare No Output	TIM9_VS_no_output1	VP_TIM9_VS_no_output1
+TIM12	Internal Clock	TIM12_VS_ClockSourceINT	VP_TIM12_VS_ClockSourceINT
+TIM12	PWM Generation CH1	TIM12_CH1	PB14
+TIM12	PWM Generation CH2	TIM12_CH2	PB15
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+1	PE2	GPIO_Output	dir2
+2	PE3	GPIO_Output	L298_ENA1
+3	PE4	GPIO_Output	L298_ENA2
+17	PC2	SPI2_MISO	
+18	PC3	SPI2_MOSI	
+40	PE9	TIM1_CH1	
+42	PE11	TIM1_CH2	
+47	PB10	SPI2_SCK	
+51	PB12	SPI2_NSS	
+53	PB14	TIM12_CH1	
+54	PB15	TIM12_CH2	
+63	PC6	TIM3_CH1	
+64	PC7	TIM3_CH2	
+65	PC8	GPIO_Output	out2
+66	PC9	GPIO_Output	int1_M_cpt_t
+82	PD1	GPIO_EXTI1	h1_inter
+83	PD2	GPIO_EXTI2	h2_inter
+84	PD3	GPIO_EXTI3	pin_error
+98	PE1	GPIO_Output	dir1
+PERIPHERALS	MODES	FUNCTIONS	PINS
+SPI2	Full-Duplex Slave	SPI2_MISO	PC2
+SPI2	Full-Duplex Slave	SPI2_MOSI	PC3
+SPI2	Full-Duplex Slave	SPI2_SCK	PB10
+SPI2	Hardware NSS Input Signal	SPI2_NSS	PB12
+SYS	SysTick	SYS_VS_Systick	VP_SYS_VS_Systick
+TIM1	Encoder Mode	TIM1_CH1	PE9
+TIM1	Encoder Mode	TIM1_CH2	PE11
+TIM3	Encoder Mode	TIM3_CH1	PC6
+TIM3	Encoder Mode	TIM3_CH2	PC7
+TIM9	Internal Clock	TIM9_VS_ClockSourceINT	VP_TIM9_VS_ClockSourceINT
+TIM9	Output Compare No Output	TIM9_VS_no_output1	VP_TIM9_VS_no_output1
+TIM12	Internal Clock	TIM12_VS_ClockSourceINT	VP_TIM12_VS_ClockSourceINT
+TIM12	PWM Generation CH1	TIM12_CH1	PB14
+TIM12	PWM Generation CH2	TIM12_CH2	PB15
+
+
+
+Pin Nb	PINs	FUNCTIONs	LABELs
+1	PE2	GPIO_Output	dir2
+2	PE3	GPIO_Output	L298_ENA1
+3	PE4	GPIO_Output	L298_ENA2
+17	PC2	SPI2_MISO	
+18	PC3	SPI2_MOSI	
+40	PE9	TIM1_CH1	
+42	PE11	TIM1_CH2	
+47	PB10	SPI2_SCK	
+51	PB12	SPI2_NSS	
+53	PB14	TIM12_CH1	
+54	PB15	TIM12_CH2	
+63	PC6	TIM3_CH1	
+64	PC7	TIM3_CH2	
+65	PC8	GPIO_Output	out2
+66	PC9	GPIO_Output	int1_M_cpt_t
+82	PD1	GPIO_EXTI1	h1_inter
+83	PD2	GPIO_EXTI2	h2_inter
+84	PD3	GPIO_EXTI3	pin_error
+98	PE1	GPIO_Output	dir1
+
+
+
+SOFTWARE PROJECT
+
+Project Settings : 
+Project Name : Esclavo
+Project Folder : C:\Users\rodry\Documents\GitHub\Micro\Esclavo
+Toolchain / IDE : STM32CubeIDE
+Firmware Package Name and Version : STM32Cube FW_F4 V1.24.2
+
+
+Code Generation Settings : 
+STM32Cube MCU packages and embedded software packs : Copy only the necessary library files
+Generate peripheral initialization as a pair of '.c/.h' files per peripheral : Yes
+Backup previously generated files when re-generating : No
+Delete previously generated files when not re-generated : Yes
+Set all free pins as analog (to optimize the power consumption) : No
+
+
+Toolchains Settings : 
+Compiler Optimizations : 
+
+
+
+
+

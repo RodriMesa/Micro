@@ -356,9 +356,7 @@ int main(void)
 			}
 			break;
 		case Error:
-			if (flag_cambio) {
-				Error_Handler();
-			}
+			Error_Handler();
 			break;
 		}
 
@@ -540,7 +538,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin) {
 	case h2_inter_Pin:
 		break;
 	case pin_error_Pin:
-		flag_cambio = 1;
 		estado = Error;
 		break;
 	}
